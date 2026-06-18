@@ -52,6 +52,14 @@ function Obj:lock(fn)
   return self.repo:lock(fn)
 end
 
+--- Whether staging operations are meaningful for this object's repository.
+--- jj has no staging area (the "index" concept does not exist), so staging is
+--- unsupported there.
+--- @return boolean
+function Obj:supports_staging()
+  return self.repo.vcs ~= 'jj'
+end
+
 --- @async
 --- @return string? err
 function Obj:refresh()
@@ -135,6 +143,10 @@ end
 
 --- @async
 function Obj:unstage_file()
+  if not self:supports_staging() then
+    log.dprint('Staging is not supported in jj repositories')
+    return
+  end
   self.repo:command({ 'reset', self.file })
   autocmd_changed(self.file)
 end
@@ -173,6 +185,10 @@ end
 --- Stage 'lines' as the entire contents of the file
 --- @param lines string[]
 function Obj:stage_lines(lines)
+  if not self:supports_staging() then
+    log.dprint('Staging is not supported in jj repositories')
+    return
+  end
   local relpath = assert(self.relpath)
   local new_object = self.repo:hash_object(relpath, lines)
   self.repo:update_index(self.mode_bits, new_object, relpath)
@@ -188,6 +204,10 @@ end)
 --- @param invert? boolean
 --- @return string? err
 function Obj:stage_hunks(hunks, invert)
+  if not self:supports_staging() then
+    return 'Staging is not supported in jj repositories'
+  end
+
   self:ensure_file_in_index()
 
   local relpath = assert(self.relpath)
@@ -234,6 +254,18 @@ function Obj.new(file, revision, encoding, gitdir, toplevel)
   local cwd = toplevel
   if not cwd and util.Path.is_abs(file) then
     cwd = vim.fn.fnamemodify(file, ':h')
+  end
+
+  -- Use the native jj backend when the nearest enclosing repository is a
+  -- non-colocated jj workspace (no usable git). Colocated jj repos, plain git
+  -- repos, and git repos nested inside a jj workspace all go through the git
+  -- path below (colocated jj-awareness is applied in the Repo layer).
+  local jj = require('gitsigns.jj')
+  local jjroot = cwd and jj.find_root(cwd)
+  if jjroot and cwd and jj.prefers_native(jjroot, cwd) then
+    local fileabs = util.Path.is_abs(file) and file or util.Path.join(jjroot, file)
+    local jjobj = require('gitsigns.jj.obj').new(fileabs, revision, encoding, jjroot)
+    return jjobj --[[@as Gitsigns.GitObj?]]
   end
 
   local repo, err = Repo.get(cwd, gitdir, toplevel)

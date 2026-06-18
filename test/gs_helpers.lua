@@ -463,6 +463,74 @@ function M.setup_test_repo(opts)
   end
 end
 
+--- @return boolean
+function M.has_jj()
+  return M.fn.executable('jj') == 1
+end
+
+--- Run a jj command rooted at `helpers.scratch`.
+--- Paths inside the scratch repo are made relative, mirroring `M.git`.
+--- @param ... string
+function M.jj(...)
+  local args = { ... } --- @type string[]
+  local scratch0 = assert(M.normalize_path(M.scratch))
+
+  for i, arg in ipairs(args) do
+    local normalized = M.normalize_path(arg)
+    if normalized and vim.startswith(normalized, scratch0 .. '/') then
+      args[i] = normalized:sub(#scratch0 + 2)
+    end
+  end
+
+  system(vim.list_extend({ 'jj', '--repository', M.scratch }, args))
+end
+
+--- Initialise an empty jj repository in `helpers.scratch`.
+--- @param colocate boolean Whether to colocate with git (the jj default).
+local function init_jj_repo(colocate)
+  M.cleanup()
+  M.mkdir(M.scratch)
+  system_ok(
+    { 'jj', 'git', 'init', colocate and '--colocate' or '--no-colocate', M.scratch },
+    'jj git init failed'
+  )
+  -- Deterministic identity for blame/status assertions (overrides any global
+  -- jj config).
+  system_ok(
+    { 'jj', '--repository', M.scratch, 'config', 'set', '--repo', 'user.name', 'tester' },
+    'jj config user.name failed'
+  )
+  system_ok(
+    { 'jj', '--repository', M.scratch, 'config', 'set', '--repo', 'user.email', 'tester@com.com' },
+    'jj config user.email failed'
+  )
+end
+
+--- Setup a jj repository in `helpers.scratch` with a single committed file
+--- `helpers.test_file`. The working-copy commit (`@`) is left empty so the file
+--- on disk matches its parent (`@-`), i.e. no signs initially.
+---
+--- By default the repo is colocated with git (the jj default). Pass
+--- `colocate = false` to exercise the native (git-less) jj backend.
+--- @param opts? {test_file_text?: string[], no_add?: boolean, colocate?: boolean}
+function M.setup_jj_repo(opts)
+  local text = opts and opts.test_file_text or test_file_text
+  local colocate = not (opts and opts.colocate == false)
+  init_jj_repo(colocate)
+  M.write_to_file(M.test_file, text)
+  if not (opts and opts.no_add) then
+    -- Snapshot + describe the working copy, then start a fresh empty change on
+    -- top so the file lives in `@-` and the working copy is clean.
+    -- `--reset-author` applies the identity configured above (the working-copy
+    -- commit was created by `jj git init` with the machine identity).
+    system_ok(
+      { 'jj', '--repository', M.scratch, 'describe', '-m', 'init commit', '--reset-author' },
+      'jj describe failed'
+    )
+    system_ok({ 'jj', '--repository', M.scratch, 'new' }, 'jj new failed')
+  end
+end
+
 --- @param cond fun()
 --- @param interval? integer
 function M.expectf(cond, interval)

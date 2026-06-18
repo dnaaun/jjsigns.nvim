@@ -5,6 +5,7 @@ local log = require('gitsigns.debug.log')
 local util = require('gitsigns.util')
 local Path = util.Path
 local errors = require('gitsigns.git.errors')
+local jj = require('gitsigns.jj')
 local Watcher = require('gitsigns.git.repo.watcher')
 
 local check_version = require('gitsigns.git.version').check
@@ -16,6 +17,9 @@ local uv = vim.uv or vim.loop ---@diagnostic disable-line: deprecated
 --- @field toplevel string
 --- @field detached boolean
 --- @field abbrev_head string
+--- The version control system managing this repository. jj repositories are
+--- colocated with git, so they reuse the git backend but disable staging.
+--- @field vcs 'git'|'jj'
 
 --- @class Gitsigns.Repo : Gitsigns.RepoInfo
 ---
@@ -513,6 +517,20 @@ function M._new(info)
       -- with no commits). This is consistent with `git rev-parse --abrev-ref
       -- HEAD` which returns "HEAD" in this case.
       local abbrev_head = self.head_oid and get_abbrev_head(self.gitdir, head2) or ''
+      if self.vcs == 'jj' then
+        -- For jj the git HEAD tracks the working-copy parent (`@-`). Prefer the
+        -- jj working-copy change for display. Computed synchronously here (as
+        -- with the get_head_oid fallback) since the watcher callback is not
+        -- async.
+        --- @type string?
+        local jj_head
+        pcall(function()
+          jj_head = async.run(jj.head, self.toplevel):wait()
+        end)
+        if jj_head and jj_head ~= '' then
+          abbrev_head = jj_head
+        end
+      end
       if self.abbrev_head ~= abbrev_head then
         self.abbrev_head = abbrev_head
         log.dprintf('HEAD changed, updating abbrev_head to %s', self.abbrev_head)
@@ -713,11 +731,22 @@ function M.get_info(dir, gitdir, worktree)
     log.eprintf('expected gitdir to be %s, got %s', gitdir, gitdir_r)
   end
 
+  local vcs = jj.is_jj_root(toplevel_r) and 'jj' or 'git'
+
+  local abbrev_head = process_abbrev_head(gitdir_r, stdout[3], toplevel_r)
+  if vcs == 'jj' then
+    -- The git HEAD tracks the working-copy parent (`@-`), which for a detached
+    -- jj HEAD would otherwise surface as a bare short SHA. Prefer the jj
+    -- working-copy change (bookmark or change id).
+    abbrev_head = jj.head(toplevel_r) or abbrev_head
+  end
+
   return {
     toplevel = toplevel_r,
     gitdir = gitdir_r,
-    abbrev_head = process_abbrev_head(gitdir_r, stdout[3], toplevel_r),
+    abbrev_head = abbrev_head,
     detached = gitdir_r ~= assert(normalize_path(Path.join(toplevel_r, '.git'))),
+    vcs = vcs,
   }
 end
 

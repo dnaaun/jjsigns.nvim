@@ -110,8 +110,15 @@ function M.show_commit(base, open, bufnr, ref_list, ref_list_ptr)
     base,
   })
 
+  -- Some backends (e.g. non-colocated jj, where git is unavailable) cannot
+  -- service `git show`; degrade gracefully instead of crashing.
+  if not res[6] then
+    require('gitsigns.message').warn('show_commit is not supported in this repository')
+    return
+  end
+
   -- Remove encoding line if it's not set to something meaningful
-  if assert(res[6]):match('^encoding (unknown)?') == nil then
+  if res[6]:match('^encoding (unknown)?') == nil then
     table.remove(res, 6)
   end
 

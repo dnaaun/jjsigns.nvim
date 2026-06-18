@@ -187,7 +187,10 @@ M.update = throttle_async({ hash = 1, schedule = true }, function(bufnr)
     end
 
     local bufname = api.nvim_buf_get_name(bufnr)
-    local rev_is_index = not git_obj:from_tree()
+    -- jj has no index/staging area: the git index is pinned to HEAD (`@-`), so
+    -- index-vs-HEAD staged signs are always empty. Skip computing them, which
+    -- also avoids an extra `git show HEAD` per update.
+    local rev_is_index = not git_obj:from_tree() and git_obj.repo.vcs ~= 'jj'
 
     if
       config.signs_staged_enable

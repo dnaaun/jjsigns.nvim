@@ -294,6 +294,39 @@ This means the signs placed in the buffer reflect the changes introduced by that
 
 If installed and enabled (via `config.trouble`; defaults to true if installed), `:Gitsigns setqflist` or `:Gitsigns setloclist` will open Trouble instead of Neovim's built-in quickfix or location list windows.
 
+## 🪵 Jujutsu (jj)
+
+Gitsigns supports [Jujutsu (jj)][jj] repositories, both **colocated** (the
+default for `jj git init` / `jj git clone`) and **non-colocated**
+(`--no-colocate`, where git is not available at all).
+
+- Signs show the diff of the working copy against its parent (`@-`) — i.e. the
+  changes in your current jj change.
+- Blame, hunk preview/navigation, and `reset_hunk`/`reset_buffer` work.
+- Signs refresh automatically after jj operations that move the working copy
+  (`jj new`, `jj squash`, `jj edit`, `jj abandon`, `jj rebase`, …).
+
+Differences from git:
+
+- **Staging is disabled.** jj has no index/staging area, so `stage_hunk`,
+  `stage_buffer`, `undo_stage_hunk` and `reset_buffer_index` are no-ops that emit
+  a warning. Staged signs are likewise never shown.
+- The statusline head (`b:gitsigns_head`) shows the working-copy change id (or
+  its bookmarks) instead of a git branch.
+
+How it works:
+
+- **Colocated** repos keep a `.git` whose `HEAD` and index are pinned to `@-`,
+  so Gitsigns reuses its battle-tested git backend unchanged.
+- **Non-colocated** repos have no usable git repository, so Gitsigns uses a
+  native backend driven entirely by `jj` commands (`jj file show`, `jj file
+  annotate`, …). It always reads with `--ignore-working-copy`, so Gitsigns never
+  snapshots or locks your working copy. A couple of advanced, git-format-specific
+  features (`show_commit`, the blame popup's commit body) are unavailable here,
+  and `change_base` expects jj revsets (e.g. `@--`) rather than git revisions.
+
+`jj` must be on your `PATH`.
+
 ## 🚫 Non-Goals
 
 ### Implement every feature in [vim-fugitive]
@@ -303,7 +336,7 @@ Gitsigns will only implement features of this plugin if: it is simple, or, the t
 
 ### Support for other VCS
 
-There aren't any active developers of this plugin who use other kinds of VCS, so adding support for them isn't feasible.
+Aside from [Jujutsu (jj)](#-jujutsu-jj) — which colocates with git and so reuses the git backend — there aren't any active developers of this plugin who use other kinds of VCS, so adding support for them isn't feasible.
 However a well written PR with a commitment of future support could change this.
 
 ## 🔌 Similar plugins
@@ -314,6 +347,7 @@ However a well written PR with a commitment of future support could change this.
 - [vim-signify]
 
 <!-- links -->
+[jj]: https://github.com/jj-vcs/jj
 [mini.diff]: https://github.com/echasnovski/mini.diff
 [coc-git]: https://github.com/neoclide/coc-git
 [diff-linematch]: https://github.com/neovim/neovim/pull/14537

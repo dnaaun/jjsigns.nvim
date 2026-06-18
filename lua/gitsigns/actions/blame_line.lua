@@ -154,9 +154,13 @@ end
 local function build_full_blame_body(bufnr, info, repo)
   local body0 = repo:command({ 'show', '-s', '--format=%B', info.sha }, { text = true })
   local body = table.concat(body0, '\n')
-  return vim.list_extend({
-    { { body, 'NormalFloat' } },
-  }, create_blame_hunk_linespec(bufnr, repo, info))
+  local result = {} --- @type Gitsigns.LineSpec[]
+  -- Backends without `git show` support (e.g. non-colocated jj) return nothing;
+  -- omit the empty body line rather than rendering a blank.
+  if body ~= '' then
+    result[#result + 1] = { { body, 'NormalFloat' } }
+  end
+  return vim.list_extend(result, create_blame_hunk_linespec(bufnr, repo, info))
 end
 
 --- @class (exact) Gitsigns.LineBlameOpts : Gitsigns.BlameOpts

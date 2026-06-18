@@ -1,0 +1,86 @@
+local jj = require('gitsigns.jj')
+local log = require('gitsigns.debug.log')
+local error_once = require('gitsigns.message').error_once
+
+--- Blame for native (non-colocated) jj repositories, built on `jj file
+--- annotate`. Produces the same shape as `gitsigns.git.blame.run_blame` so the
+--- blame UI is agnostic to the backend.
+local M = {}
+
+--- @param line Gitsigns.JJ.AnnotateLine
+--- @return Gitsigns.CommitInfo
+local function commit_info(line)
+  local mail = '<' .. line.email .. '>'
+  return {
+    sha = line.commit_id,
+    abbrev_sha = line.commit_id:sub(1, 8),
+    author = line.author,
+    author_mail = mail,
+    author_time = line.time,
+    author_tz = line.tz,
+    -- jj does not distinguish author/committer in annotate output; reuse the
+    -- author for both.
+    committer = line.author,
+    committer_mail = mail,
+    committer_time = line.time,
+    committer_tz = line.tz,
+    summary = line.summary,
+  }
+end
+
+--- @async
+--- @param obj Gitsigns.JJObj
+--- @param contents? string[]
+--- @param _lnum? integer|[integer, integer] jj annotates the whole file
+--- @param revision? string
+--- @param _opts? Gitsigns.BlameOpts
+--- @return table<integer, Gitsigns.BlameInfo>
+--- @return table<string, Gitsigns.CommitInfo?>
+function M.run_blame(obj, contents, _lnum, revision, _opts)
+  local ret = {} --- @type table<integer, Gitsigns.BlameInfo>
+  local commits = {} --- @type table<string, Gitsigns.CommitInfo?>
+
+  local Blame = require('gitsigns.git.blame')
+
+  -- Untracked / not-yet-committed files: everything is "Not Committed Yet".
+  if not obj.object_name then
+    assert(contents, 'contents must be provided for untracked files')
+    for i in ipairs(contents) do
+      ret[i] = Blame.get_blame_nc(obj.file, i)
+    end
+    return ret, commits
+  end
+
+  -- jj cannot blame buffer contents directly, so we annotate the working-copy
+  -- revision as last snapshotted. Lines that differ from that snapshot are
+  -- handled by the caller's hunk bypass (returned as "Not Committed Yet"), so
+  -- the snapshot is authoritative for the unchanged lines we do attribute here.
+  local lines, err = jj.annotate(obj.repo.toplevel, revision or '@', assert(obj.relpath))
+
+  if not lines then
+    local msg = 'Error running jj file annotate: ' .. (err or '?')
+    error_once(msg)
+    log.eprint(msg)
+    return ret, commits
+  end
+
+  for i, line in ipairs(lines) do
+    if line.working_copy then
+      -- The working-copy commit is jj's analogue of git's uncommitted changes.
+      ret[i] = Blame.get_blame_nc(assert(obj.relpath), i)
+    else
+      local commit = commits[line.commit_id] or commit_info(line)
+      commits[line.commit_id] = commit
+      ret[i] = {
+        orig_lnum = i,
+        final_lnum = i,
+        commit = commit,
+        filename = assert(obj.relpath),
+      }
+    end
+  end
+
+  return ret, commits
+end
+
+return M

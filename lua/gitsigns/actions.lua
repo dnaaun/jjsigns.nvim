@@ -270,6 +270,19 @@ local function get_range(params)
   return range
 end
 
+--- Staging has no meaning in jj repositories (there is no index/staging area),
+--- and writing to the git index would actively desync gitsigns from jj's view.
+--- Warn and abort when staging is requested for such a buffer.
+--- @param bcache Gitsigns.CacheEntry
+--- @return boolean ok
+local function check_staging_supported(bcache)
+  if not bcache.git_obj:supports_staging() then
+    message.warn('Staging is not supported in jj repositories')
+    return false
+  end
+  return true
+end
+
 --- Stage the hunk at the cursor position, or all lines in the
 --- given range. If {range} is provided, all lines in the given
 --- range are staged. This supports partial-hunks, meaning if a
@@ -292,6 +305,10 @@ function M.stage_hunk(range, opts, callback)
   local bufnr = current_buf()
   local bcache = cache[bufnr]
   if not bcache then
+    return
+  end
+
+  if not check_staging_supported(bcache) then
     return
   end
 
@@ -439,6 +456,10 @@ function M.undo_stage_hunk(callback)
       return
     end
 
+    if not check_staging_supported(bcache) then
+      return
+    end
+
     bcache.git_obj:lock(function()
       local hunk = table.remove(bcache.staged_diffs)
       if not hunk then
@@ -469,6 +490,10 @@ function M.stage_buffer(callback)
     local bufnr = current_buf()
     local bcache = cache[bufnr]
     if not bcache then
+      return
+    end
+
+    if not check_staging_supported(bcache) then
       return
     end
 
@@ -517,6 +542,10 @@ function M.reset_buffer_index(callback)
     local bufnr = current_buf()
     local bcache = cache[bufnr]
     if not bcache then
+      return
+    end
+
+    if not check_staging_supported(bcache) then
       return
     end
 
@@ -1006,12 +1035,17 @@ M.get_actions = function()
   end
   local hunk = bcache:get_cursor_hunk()
 
+  -- Staging is not available in jj repositories.
+  local can_stage = bcache.git_obj:supports_staging()
+
   --- @type string[]
   local actions_l = {}
 
   if hunk then
+    if can_stage then
+      actions_l[#actions_l + 1] = 'stage_hunk'
+    end
     vim.list_extend(actions_l, {
-      'stage_hunk',
       'reset_hunk',
       'preview_hunk',
       'select_hunk',
@@ -1020,7 +1054,7 @@ M.get_actions = function()
     actions_l[#actions_l + 1] = 'blame_line'
   end
 
-  if not vim.tbl_isempty(bcache.staged_diffs) then
+  if can_stage and not vim.tbl_isempty(bcache.staged_diffs) then
     actions_l[#actions_l + 1] = 'undo_stage_hunk'
   end
 
