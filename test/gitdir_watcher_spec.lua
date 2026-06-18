@@ -14,7 +14,7 @@ local match_debug_messages = helpers.match_debug_messages
 local n, p, np = helpers.n, helpers.p, helpers.np
 local normalize_path = helpers.normalize_path
 local path_pattern = helpers.path_pattern
-local setup_gitsigns = helpers.setup_gitsigns
+local setup_jjsigns = helpers.setup_jjsigns
 local git = helpers.git
 local test_file --- @type string
 
@@ -124,8 +124,8 @@ describe('gitdir_watcher', function()
 
   it('can follow moved files', function()
     setup_test_repo()
-    setup_gitsigns(watcher_test_config)
-    command('Gitsigns clear_debug')
+    setup_jjsigns(watcher_test_config)
+    command('Jjsigns clear_debug')
     edit(test_file)
 
     local revparse_pat = ('system.system: git .* rev-parse --show-toplevel --absolute-git-dir --abbrev-ref HEAD'):gsub(
@@ -144,7 +144,7 @@ describe('gitdir_watcher', function()
 
     eq_bufs({ [1] = test_file })
 
-    command('Gitsigns clear_debug')
+    command('Jjsigns clear_debug')
 
     local test_file2 = test_file .. '2'
     git('mv', test_file, test_file2)
@@ -164,7 +164,7 @@ describe('gitdir_watcher', function()
 
     eq_bufs({ [1] = test_file2 })
 
-    command('Gitsigns clear_debug')
+    command('Jjsigns clear_debug')
 
     local test_file3 = test_file .. '3'
 
@@ -185,7 +185,7 @@ describe('gitdir_watcher', function()
 
     eq_bufs({ [1] = test_file3 })
 
-    command('Gitsigns clear_debug')
+    command('Jjsigns clear_debug')
 
     git('mv', test_file3, test_file)
 
@@ -207,13 +207,13 @@ describe('gitdir_watcher', function()
 
   it('does not delete alternate buffers when following moved files', function()
     setup_test_repo()
-    setup_gitsigns(watcher_test_config)
+    setup_jjsigns(watcher_test_config)
     edit(test_file)
     local tracked_buf = helpers.api.nvim_get_current_buf()
 
     helpers.expectf(function()
       return helpers.exec_lua(function()
-        return vim.b.gitsigns_status_dict ~= nil
+        return vim.b.jjsigns_status_dict ~= nil
       end)
     end)
 
@@ -245,12 +245,12 @@ describe('gitdir_watcher', function()
     git('add', test_file1)
     git('commit', '-m', 'init commit')
 
-    setup_gitsigns(watcher_test_config)
+    setup_jjsigns(watcher_test_config)
     edit(test_file1)
 
     helpers.expectf(function()
       return helpers.exec_lua(function()
-        return vim.b.gitsigns_status_dict.gitdir ~= nil
+        return vim.b.jjsigns_status_dict.gitdir ~= nil
       end)
     end)
 
@@ -263,12 +263,12 @@ describe('gitdir_watcher', function()
 
   it('preserves slash branch names on head updates', function()
     setup_test_repo()
-    setup_gitsigns(watcher_test_config)
+    setup_jjsigns(watcher_test_config)
     edit(test_file)
 
     helpers.expectf(function()
       return helpers.exec_lua(function()
-        return vim.b.gitsigns_status_dict.gitdir ~= nil
+        return vim.b.jjsigns_status_dict.gitdir ~= nil
       end)
     end)
 
@@ -291,7 +291,7 @@ describe('gitdir_watcher', function()
     git('add', f1, f2)
     git('commit', '-m', 'init commit')
 
-    setup_gitsigns(watcher_test_config)
+    setup_jjsigns(watcher_test_config)
 
     command('edit ' .. f1)
     helpers.feed('Aa<esc>')
@@ -316,16 +316,16 @@ describe('gitdir_watcher', function()
     setup_test_repo({ no_add = true })
     install_failing_fs_watchers()
 
-    setup_gitsigns(watcher_fallback_test_config)
+    setup_jjsigns(watcher_fallback_test_config)
     edit(test_file)
 
     helpers.expectf(function()
       return helpers.exec_lua(function()
-        local bcache = require('gitsigns.cache').cache[vim.api.nvim_get_current_buf()]
+        local bcache = require('jjsigns.cache').cache[vim.api.nvim_get_current_buf()]
         return bcache ~= nil
           and bcache.git_obj.repo._watcher ~= nil
           and bcache.git_obj.repo._watcher._backend == 'fs_poll'
-          and vim.b.gitsigns_status_dict.gitdir ~= nil
+          and vim.b.jjsigns_status_dict.gitdir ~= nil
       end)
     end)
 
@@ -338,12 +338,12 @@ describe('gitdir_watcher', function()
     setup_test_repo({ no_add = true })
     install_failing_fs_watchers(true)
 
-    setup_gitsigns(watcher_fallback_test_config)
+    setup_jjsigns(watcher_fallback_test_config)
     edit(test_file)
 
     helpers.expectf(function()
       return helpers.exec_lua(function()
-        local bcache = require('gitsigns.cache').cache[vim.api.nvim_get_current_buf()]
+        local bcache = require('jjsigns.cache').cache[vim.api.nvim_get_current_buf()]
         return bcache ~= nil
           and bcache.git_obj.repo._watcher ~= nil
           and bcache.git_obj.repo._watcher._backend == 'fs_poll'
@@ -353,7 +353,7 @@ describe('gitdir_watcher', function()
     eq(
       true,
       helpers.exec_lua(function()
-        local bcache = require('gitsigns.cache').cache[vim.api.nvim_get_current_buf()]
+        local bcache = require('jjsigns.cache').cache[vim.api.nvim_get_current_buf()]
         local repo = assert(bcache).git_obj.repo
         local watcher = assert(repo._watcher)
         local watched_path, old = next(watcher.handles)
@@ -369,7 +369,7 @@ describe('gitdir_watcher', function()
     git('add', test_file)
 
     helpers.exec_lua(function()
-      local bcache = require('gitsigns.cache').cache[vim.api.nvim_get_current_buf()]
+      local bcache = require('jjsigns.cache').cache[vim.api.nvim_get_current_buf()]
       local repo = assert(bcache).git_obj.repo
       local _, handle = next(assert(repo._watcher).handles)
       assert(handle)
@@ -381,41 +381,41 @@ describe('gitdir_watcher', function()
 
   it('closes and recreates watchers when buffers detach and reattach', function()
     setup_test_repo()
-    setup_gitsigns(watcher_test_config)
+    setup_jjsigns(watcher_test_config)
     edit(test_file)
 
     helpers.expectf(function()
       return helpers.exec_lua(function()
-        local bcache = require('gitsigns.cache').cache[vim.api.nvim_get_current_buf()]
+        local bcache = require('jjsigns.cache').cache[vim.api.nvim_get_current_buf()]
         return bcache ~= nil and bcache.git_obj.repo._watcher ~= nil
       end)
     end)
 
     local handle_count = helpers.exec_lua(function()
-      local bcache = require('gitsigns.cache').cache[vim.api.nvim_get_current_buf()]
+      local bcache = require('jjsigns.cache').cache[vim.api.nvim_get_current_buf()]
       local repo = assert(bcache).git_obj.repo
 
-      _G.gitsigns_test_repo = repo
-      _G.gitsigns_test_watcher_handles = {}
+      _G.jjsigns_test_repo = repo
+      _G.jjsigns_test_watcher_handles = {}
 
       for _, handle in pairs(assert(repo._watcher).handles) do
-        _G.gitsigns_test_watcher_handles[#_G.gitsigns_test_watcher_handles + 1] = handle
+        _G.jjsigns_test_watcher_handles[#_G.jjsigns_test_watcher_handles + 1] = handle
       end
 
-      return #_G.gitsigns_test_watcher_handles
+      return #_G.jjsigns_test_watcher_handles
     end)
 
     eq(true, handle_count > 0)
 
-    command('Gitsigns detach')
+    command('Jjsigns detach')
 
     helpers.expectf(function()
       return helpers.exec_lua(function()
-        if _G.gitsigns_test_repo._watcher ~= nil then
+        if _G.jjsigns_test_repo._watcher ~= nil then
           return false
         end
 
-        for _, handle in ipairs(_G.gitsigns_test_watcher_handles) do
+        for _, handle in ipairs(_G.jjsigns_test_watcher_handles) do
           if not handle:is_closing() then
             return false
           end
@@ -425,18 +425,18 @@ describe('gitdir_watcher', function()
       end)
     end)
 
-    command('Gitsigns attach')
+    command('Jjsigns attach')
 
     helpers.expectf(function()
       return helpers.exec_lua(function()
-        local bcache = require('gitsigns.cache').cache[vim.api.nvim_get_current_buf()]
+        local bcache = require('jjsigns.cache').cache[vim.api.nvim_get_current_buf()]
         return bcache ~= nil and bcache.git_obj.repo._watcher ~= nil
       end)
     end)
 
     helpers.exec_lua(function()
-      _G.gitsigns_test_repo = nil
-      _G.gitsigns_test_watcher_handles = nil
+      _G.jjsigns_test_repo = nil
+      _G.jjsigns_test_watcher_handles = nil
       collectgarbage('collect')
     end)
   end)
@@ -446,8 +446,8 @@ describe('gitdir_watcher', function()
     helpers.setup_path()
 
     local result = helpers.exec_lua(function(scratch)
-      local async = require('gitsigns.async')
-      local Repo = require('gitsigns.git.repo')
+      local async = require('jjsigns.async')
+      local Repo = require('jjsigns.git.repo')
 
       local repo, err = async.run(Repo.get, scratch):wait(5000)
       assert(repo, err)
@@ -487,8 +487,8 @@ describe('gitdir_watcher', function()
     helpers.setup_path()
 
     local result = helpers.exec_lua(function(scratch)
-      local async = require('gitsigns.async')
-      local Repo = require('gitsigns.git.repo')
+      local async = require('jjsigns.async')
+      local Repo = require('jjsigns.git.repo')
 
       local repo, err = async.run(Repo.get, scratch):wait(5000)
       assert(repo, err)

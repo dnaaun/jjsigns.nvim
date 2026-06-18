@@ -27,7 +27,7 @@ describe('render.virt', function()
 
   it('renders layered captured lines and extends eol fill with padding', function()
     local vline, width = exec_lua(function()
-      local Virt = require('gitsigns.render.virt')
+      local Virt = require('jjsigns.render.virt')
       local text = 'local foo = 1'
       local lines = {
         {
@@ -37,13 +37,13 @@ describe('render.virt', function()
               start_col = 0,
               end_col = #text,
               priority = 1000,
-              hl_group = 'GitSignsDeleteVirtLn',
+              hl_group = 'JjSignsDeleteVirtLn',
             },
             {
               start_col = 6,
               end_col = 9,
               priority = 1001,
-              hl_group = 'GitSignsDeleteVirtLnInLine',
+              hl_group = 'JjSignsDeleteVirtLnInLine',
             },
           },
         },
@@ -60,25 +60,25 @@ describe('render.virt', function()
     end)
 
     eq(24, width)
-    assert(contains_hl(virt_hl_at_col(vline, 0), 'GitSignsDeleteVirtLn'))
-    assert(contains_hl(virt_hl_at_col(vline, 7), 'GitSignsDeleteVirtLnInLine'))
-    assert(contains_hl(virt_hl_at_col(vline, 20), 'GitSignsDeleteVirtLn'))
+    assert(contains_hl(virt_hl_at_col(vline, 0), 'JjSignsDeleteVirtLn'))
+    assert(contains_hl(virt_hl_at_col(vline, 7), 'JjSignsDeleteVirtLnInLine'))
+    assert(contains_hl(virt_hl_at_col(vline, 20), 'JjSignsDeleteVirtLn'))
   end)
 
   it('prepends per-line virtual prefixes without mutating input', function()
     local out_first, out_second, prefix_first = exec_lua(function()
-      local Virt = require('gitsigns.render.virt')
+      local Virt = require('jjsigns.render.virt')
       local lines = {
         {
           text = 'alpha',
           layers = {
-            { start_col = 0, end_col = 5, priority = 1000, hl_group = 'GitSignsDeleteVirtLn' },
+            { start_col = 0, end_col = 5, priority = 1000, hl_group = 'JjSignsDeleteVirtLn' },
           },
         },
         {
           text = 'beta',
           layers = {
-            { start_col = 0, end_col = 4, priority = 1000, hl_group = 'GitSignsDeleteVirtLn' },
+            { start_col = 0, end_col = 4, priority = 1000, hl_group = 'JjSignsDeleteVirtLn' },
           },
         },
       }

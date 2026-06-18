@@ -13,7 +13,7 @@ package.path = table.concat({
 }, ';')
 
 local emydoc = require('gen_emydoc') --- @type GenEmmyDoc
-local actions = require('gitsigns.actions')
+local actions = require('jjsigns.actions')
 local strip_optional = emydoc.strip_optional
 
 --- @class GeneratedPositionalSpec
@@ -312,7 +312,7 @@ local function build_action_specs(doc)
     end
   end
 
-  local actions_type = classes['gitsigns.actions']
+  local actions_type = classes['jjsigns.actions']
   --- @cast actions_type EmmyDocTypeClass
 
   local ret = {} --- @type table<string, GeneratedActionSpec>
@@ -381,8 +381,8 @@ end
 local doc = emydoc.load()
 local output = render(doc)
 
-vim.fn.mkdir(root .. '/lua/gitsigns/cli/completion', 'p')
+vim.fn.mkdir(root .. '/lua/jjsigns/cli/completion', 'p')
 vim.fn.writefile(
   vim.split(output, '\n', { plain = true }),
-  root .. '/lua/gitsigns/cli/completion/generated.lua'
+  root .. '/lua/jjsigns/cli/completion/generated.lua'
 )

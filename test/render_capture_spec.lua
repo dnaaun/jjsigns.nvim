@@ -17,7 +17,7 @@ describe('render capture', function()
   it('captures overlapping extmark highlights with priority order', function()
     local text, layers, stack = exec_lua(function()
       vim.api.nvim_buf_set_lines(0, 0, -1, false, { 'abcdef' })
-      local ns = vim.api.nvim_create_namespace('gitsigns_test_capture')
+      local ns = vim.api.nvim_create_namespace('jjsigns_test_capture')
 
       vim.api.nvim_buf_set_extmark(0, ns, 0, 1, {
         end_col = 4,
@@ -35,7 +35,7 @@ describe('render capture', function()
         priority = 100,
       })
 
-      local Capture = require('gitsigns.render.capture')
+      local Capture = require('jjsigns.render.capture')
       local line = Capture.capture_line(0, 0)
       return line.text, line.layers, Capture.hl_stack_at(line, 2)
     end)
@@ -75,13 +75,13 @@ describe('render capture', function()
   it('keeps hl_eol extmarks in the captured line stack', function()
     local layers, stack = exec_lua(function()
       vim.api.nvim_buf_set_lines(0, 0, -1, false, { 'foo' })
-      local ns = vim.api.nvim_create_namespace('gitsigns_test_capture_eol')
+      local ns = vim.api.nvim_create_namespace('jjsigns_test_capture_eol')
       vim.api.nvim_buf_set_extmark(0, ns, 0, 0, {
         hl_group = 'ErrorMsg',
         hl_eol = true,
       })
 
-      local Capture = require('gitsigns.render.capture')
+      local Capture = require('jjsigns.render.capture')
       local line = Capture.capture_line(0, 0)
       return line.layers, Capture.hl_stack_at(line, 2)
     end)
@@ -98,16 +98,16 @@ describe('render capture', function()
 
   it('applies full-line and word-diff overlays without rendering', function()
     local full_stack, diff_stack, plain_stack = exec_lua(function()
-      local Capture = require('gitsigns.render.capture')
-      local Overlay = require('gitsigns.render.overlay')
+      local Capture = require('jjsigns.render.capture')
+      local Overlay = require('jjsigns.render.overlay')
 
       local lines = {
         { text = 'abc', layers = {} },
       }
 
-      Overlay.add_full_line_layer(lines, 'GitSignsDeleteVirtLn', 1000)
+      Overlay.add_full_line_layer(lines, 'JjSignsDeleteVirtLn', 1000)
       Overlay.add_word_diff_layers(lines, { { 1, 'change', 2, 3 } }, function(region_type)
-        return region_type == 'change' and 'GitSignsChangeInline' or nil
+        return region_type == 'change' and 'JjSignsChangeInline' or nil
       end, 1001, { ensure_min_width = true })
 
       local line = lines[1]
@@ -116,8 +116,8 @@ describe('render capture', function()
         Capture.hl_stack_at(line, 0)
     end)
 
-    eq({ 'GitSignsDeleteVirtLn' }, full_stack)
-    eq({ 'GitSignsDeleteVirtLn', 'GitSignsChangeInline' }, diff_stack)
-    eq({ 'GitSignsDeleteVirtLn' }, plain_stack)
+    eq({ 'JjSignsDeleteVirtLn' }, full_stack)
+    eq({ 'JjSignsDeleteVirtLn', 'JjSignsChangeInline' }, diff_stack)
+    eq({ 'JjSignsDeleteVirtLn' }, plain_stack)
   end)
 end)

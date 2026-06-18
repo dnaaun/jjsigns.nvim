@@ -1,11 +1,11 @@
 name: Bug report
-description: Report a problem with Gitsigns
+description: Report a problem with Jjsigns
 labels: [bug]
 body:
   - type: markdown
     attributes:
       value: >
-        Before reporting make sure that Gitsigns is updated to the latest version.
+        Before reporting make sure that Jjsigns is updated to the latest version.
 
   - type: textarea
     attributes:
@@ -53,19 +53,19 @@ body:
       render: Lua
       value: |
         for name, url in pairs{
-          gitsigns = 'https://github.com/lewis6991/gitsigns.nvim',
+          jjsigns = 'https://github.com/dnaaun/jjsigns.nvim',
           -- ADD OTHER PLUGINS _NECESSARY_ TO REPRODUCE THE ISSUE
         } do
-          local install_path = vim.fn.fnamemodify('gitsigns_issue/'..name, ':p')
+          local install_path = vim.fn.fnamemodify('jjsigns_issue/'..name, ':p')
           if vim.fn.isdirectory(install_path) == 0 then
             vim.fn.system { 'git', 'clone', '--depth=1', url, install_path }
           end
           vim.opt.runtimepath:append(install_path)
         end
 
-        require('gitsigns').setup{
+        require('jjsigns').setup{
           debug_mode = true, -- You must add this to enable debug messages
-          -- ADD GITSIGNS CONFIG THAT IS _NECESSARY_ FOR REPRODUCING THE ISSUE
+          -- ADD JJSIGNS CONFIG THAT IS _NECESSARY_ FOR REPRODUCING THE ISSUE
         }
 
         -- ADD INIT.LUA SETTINGS THAT IS _NECESSARY_ FOR REPRODUCING THE ISSUE
@@ -81,8 +81,8 @@ body:
         If this is not provided, the issue may be closed without notice.
 
         Example:
-          1. `mkdir gitsigns_issue`
-          2. `cd gitsigns_issue`
+          1. `mkdir jjsigns_issue`
+          2. `cd jjsigns_issue`
           3. `git init`
           4. `touch file`
           5. `git add file`
@@ -94,17 +94,17 @@ body:
 
   - type: textarea
     attributes:
-      label: "Gitsigns debug messages"
+      label: "Jjsigns debug messages"
       render: text
       description: >
-        Please include the output of `:Gitsigns debug_messages`.
+        Please include the output of `:Jjsigns debug_messages`.
 
         Note: You must have `debug_mode = true` in `setup()`.
 
   - type: textarea
     attributes:
-      label: "Gitsigns cache"
+      label: "Jjsigns cache"
       render: lua
       description: >
         If you think it's relevant maybe also provide the output of
-        `:Gitsigns dump_cache`.
+        `:Jjsigns dump_cache`.

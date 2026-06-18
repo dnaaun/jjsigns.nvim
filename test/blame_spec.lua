@@ -10,7 +10,7 @@ local expectf = helpers.expectf
 local feed = helpers.feed
 local git = helpers.git
 local require_source_hls = helpers.require_source_hls
-local setup_gitsigns = helpers.setup_gitsigns
+local setup_jjsigns = helpers.setup_jjsigns
 local setup_test_repo = helpers.setup_test_repo
 local test_config = helpers.test_config
 local wait_for_attach = helpers.wait_for_attach
@@ -22,10 +22,10 @@ helpers.env()
 
 local function open_blame_panel()
   eq(
-    'gitsigns-blame',
+    'jjsigns-blame',
     exec_lua(function()
-      local async = require('gitsigns.async')
-      async.run(require('gitsigns.actions.blame').blame):wait(5000)
+      local async = require('jjsigns.async')
+      async.run(require('jjsigns.actions.blame').blame):wait(5000)
       return vim.bo.filetype
     end)
   )
@@ -35,7 +35,7 @@ local function get_blame_panel_state()
   return exec_lua(function()
     local bufnr = vim.api.nvim_get_current_buf()
     local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
-    local ns = assert(vim.api.nvim_get_namespaces().gitsigns_blame_win)
+    local ns = assert(vim.api.nvim_get_namespaces().jjsigns_blame_win)
     local marks = vim.api.nvim_buf_get_extmarks(bufnr, ns, 0, -1, { details = true })
     local row_hls = {} --- @type table<integer, string[]>
     local line_widths = {} --- @type integer[]
@@ -92,7 +92,7 @@ describe('blame', function()
   end)
 
   it('keeps cursor line on reblame', function()
-    setup_gitsigns(test_config)
+    setup_jjsigns(test_config)
     setup_test_repo({
       test_file_text = { 'one', 'two', 'three', 'four', 'five' },
     })
@@ -114,16 +114,16 @@ describe('blame', function()
 
     expectf(function()
       return exec_lua(function(initial_name)
-        return vim.bo.filetype == 'gitsigns-blame' and vim.api.nvim_buf_get_name(0) ~= initial_name
+        return vim.bo.filetype == 'jjsigns-blame' and vim.api.nvim_buf_get_name(0) ~= initial_name
       end, initial_blame_bufname)
     end)
 
     eq({ 3, 0 }, helpers.api.nvim_win_get_cursor(0))
-    eq('gitsigns-blame', exec_lua('return vim.bo.filetype'))
+    eq('jjsigns-blame', exec_lua('return vim.bo.filetype'))
   end)
 
   it('renders the default side-panel layout', function()
-    setup_gitsigns(test_config)
+    setup_jjsigns(test_config)
     setup_test_repo({
       test_file_text = { 'one', 'two' },
     })
@@ -141,14 +141,14 @@ describe('blame', function()
 
     assert(result.lines[1]:match('^┍ %x%x%x%x%x%x%x%x tester ' .. date_pat .. '$'))
     eq('┕ init commit', result.lines[2])
-    eq(true, has_hl_match(result.row_hls, 1, '^GitSignsBlameColor%.'))
+    eq(true, has_hl_match(result.row_hls, 1, '^JjSignsBlameColor%.'))
     eq(true, has_hl(result.row_hls, 2, 'Comment'))
   end)
 
   it('supports string side-panel formatters', function()
     local config = vim.deepcopy(test_config)
     config.blame_formatter = '<author_time:%Y> <abbrev_sha> <summary>'
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     setup_test_repo({
       test_file_text = { 'one', 'two' },
     })
@@ -165,12 +165,12 @@ describe('blame', function()
 
     assert(result.lines[1]:match('^┍ ' .. result.year .. ' %x%x%x%x%x%x%x%x init commit$'))
     eq('┕', result.lines[2])
-    eq(true, has_hl_match(result.row_hls, 1, '^GitSignsBlameColor%.'))
+    eq(true, has_hl_match(result.row_hls, 1, '^JjSignsBlameColor%.'))
     eq(false, has_hl(result.row_hls, 2, 'Comment'))
   end)
 
   it('does not let repeated summary lines widen the side panel', function()
-    setup_gitsigns(test_config)
+    setup_jjsigns(test_config)
     setup_test_repo({
       test_file_text = { 'one', 'two' },
     })
@@ -199,9 +199,9 @@ describe('blame', function()
   end)
 
   it('supports function side-panel formatters with highlights', function()
-    setup_gitsigns(test_config)
+    setup_jjsigns(test_config)
     exec_lua(function()
-      require('gitsigns.config').config.blame_formatter = function(_name, info, context)
+      require('jjsigns.config').config.blame_formatter = function(_name, info, context)
         return {
           { info.abbrev_sha, context.hash_hl_group },
           { ' ' },
@@ -229,16 +229,16 @@ describe('blame', function()
 
     assert(result.lines[1]:match('^┍ %x%x%x%x%x%x%x%x tester ' .. result.year .. '$'))
     eq('┕', result.lines[2])
-    eq(true, has_hl_match(result.row_hls, 1, '^GitSignsBlameColor%.'))
+    eq(true, has_hl_match(result.row_hls, 1, '^JjSignsBlameColor%.'))
     eq(true, has_hl(result.row_hls, 1, 'ErrorMsg'))
     eq(true, has_hl(result.row_hls, 1, 'WarningMsg'))
     eq(false, has_hl(result.row_hls, 2, 'Comment'))
   end)
 
   it('falls back when function side-panel formatters return strings', function()
-    setup_gitsigns(test_config)
+    setup_jjsigns(test_config)
     exec_lua(function()
-      require('gitsigns.config').config.blame_formatter = function()
+      require('jjsigns.config').config.blame_formatter = function()
         return 'not chunks'
       end
     end)
@@ -260,13 +260,13 @@ describe('blame', function()
 
     assert(result.lines[1]:match('^┍ %x%x%x%x%x%x%x%x tester ' .. date_pat .. '$'))
     eq('┕ init commit', result.lines[2])
-    eq(true, has_hl_match(result.row_hls, 1, '^GitSignsBlameColor%.'))
+    eq(true, has_hl_match(result.row_hls, 1, '^JjSignsBlameColor%.'))
     eq(true, has_hl(result.row_hls, 2, 'Comment'))
   end)
 
   it('uses a repo-relative path when running blame', function()
     local args = exec_lua(function()
-      local blame = require('gitsigns.git.blame')
+      local blame = require('jjsigns.git.blame')
 
       local captured_args
       local obj = {
@@ -311,7 +311,7 @@ describe('blame', function()
 
   it('blames a tracked file in a nested path', function()
     helpers.git_init_scratch()
-    setup_gitsigns(test_config)
+    setup_jjsigns(test_config)
 
     local relpath = '.config/nvim/lua/mappings.lua'
     local file = scratch .. '/' .. relpath
@@ -325,10 +325,10 @@ describe('blame', function()
     wait_for_attach()
 
     local result = exec_lua(function(file0)
-      local async = require('gitsigns.async')
+      local async = require('jjsigns.async')
       return async
         .run(function()
-          local Git = require('gitsigns.git')
+          local Git = require('jjsigns.git')
           local encoding = vim.bo.fileencoding
           if encoding == '' then
             encoding = 'utf-8'
@@ -372,9 +372,9 @@ describe('blame', function()
 
     local config = vim.deepcopy(test_config)
     config.gh = true
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     edit(test_file)
-    enable_lua_treesitter_on_filetype('gitsigns_blame_treesitter')
+    enable_lua_treesitter_on_filetype('jjsigns_blame_treesitter')
 
     check({
       status = { head = 'main', added = 0, changed = 0, removed = 0 },
@@ -382,9 +382,9 @@ describe('blame', function()
     })
 
     exec_lua(function()
-      local async = require('gitsigns.async')
+      local async = require('jjsigns.async')
 
-      package.loaded['gitsigns.gh'] = {
+      package.loaded['jjsigns.gh'] = {
         commit_url = function()
           return 'https://example.test/commit'
         end,
@@ -393,7 +393,7 @@ describe('blame', function()
         end,
       }
 
-      async.run(require('gitsigns.actions.blame_line'), { full = true }):wait()
+      async.run(require('jjsigns.actions.blame_line'), { full = true }):wait()
     end)
 
     expectf(function()
@@ -410,7 +410,7 @@ describe('blame', function()
           assert(ok and parser)
           pcall(parser.parse, parser, true)
 
-          local ns_preview = vim.api.nvim_create_namespace('gitsigns_test_blame_expected')
+          local ns_preview = vim.api.nvim_create_namespace('jjsigns_test_blame_expected')
           vim.api.nvim_buf_set_extmark(preview_buf, ns_preview, 0, 0, {
             hl_group = line_hl,
             hl_eol = true,
@@ -425,16 +425,16 @@ describe('blame', function()
           })
 
           local diff_col = region[3] - 1
-          local inspected = require('gitsigns.inspect').inspect_range(preview_buf, 0, 0, #line)
-          local keyword = require('gitsigns.inspect').hl_stack_at(inspected, 0)
-          local diff = require('gitsigns.inspect').hl_stack_at(inspected, diff_col)
+          local inspected = require('jjsigns.inspect').inspect_range(preview_buf, 0, 0, #line)
+          local keyword = require('jjsigns.inspect').hl_stack_at(inspected, 0)
+          local diff = require('jjsigns.inspect').hl_stack_at(inspected, diff_col)
 
           vim.api.nvim_buf_delete(preview_buf, { force = true })
 
           return keyword, diff, diff_col
         end
 
-        local popup_win = require('gitsigns.popup').is_open('blame')
+        local popup_win = require('jjsigns.popup').is_open('blame')
         if not popup_win then
           return
         end
@@ -455,23 +455,23 @@ describe('blame', function()
           return
         end
 
-        local Inspect = require('gitsigns.inspect')
-        local removed_regions, added_regions = require('gitsigns.diff_int').run_word_diff(
+        local Inspect = require('jjsigns.inspect')
+        local removed_regions, added_regions = require('jjsigns.diff_int').run_word_diff(
           { 'local foo = 1' },
           { 'local bar = 1' }
         )
         local expected_deleted_keyword, expected_deleted_diff, deleted_diff_col = expected_line_hls(
           'local foo = 1',
-          'GitSignsDeletePreview',
-          'GitSignsDeleteInline',
+          'JjSignsDeletePreview',
+          'JjSignsDeleteInline',
           removed_regions[1]
         )
         local expected_added_keyword, expected_added_diff, added_diff_col = expected_line_hls(
           'local bar = 1',
-          'GitSignsAddPreview',
-          added_regions[1][2] == 'add' and 'GitSignsAddInline'
-            or added_regions[1][2] == 'change' and 'GitSignsChangeInline'
-            or 'GitSignsDeleteInline',
+          'JjSignsAddPreview',
+          added_regions[1][2] == 'add' and 'JjSignsAddInline'
+            or added_regions[1][2] == 'change' and 'JjSignsChangeInline'
+            or 'JjSignsDeleteInline',
           added_regions[1]
         )
         local deleted = Inspect.inspect_range(popup_buf, deleted_row, 0, #'-local foo = 1')
@@ -514,7 +514,7 @@ describe('blame', function()
 
     local config = vim.deepcopy(test_config)
     config.gh = true
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     edit(test_file)
     check({
       status = { head = 'main', added = 0, changed = 0, removed = 0 },
@@ -522,9 +522,9 @@ describe('blame', function()
     })
 
     exec_lua(function()
-      local async = require('gitsigns.async')
+      local async = require('jjsigns.async')
 
-      package.loaded['gitsigns.gh'] = {
+      package.loaded['jjsigns.gh'] = {
         commit_url = function()
           return 'https://example.test/commit'
         end,
@@ -533,19 +533,19 @@ describe('blame', function()
         end,
       }
 
-      async.run(require('gitsigns.actions.blame_line'), { full = true }):wait()
+      async.run(require('jjsigns.actions.blame_line'), { full = true }):wait()
     end)
 
     local result
     expectf(function()
       result = exec_lua(function()
-        local popup_win = require('gitsigns.popup').is_open('blame')
+        local popup_win = require('jjsigns.popup').is_open('blame')
         if not popup_win then
           return
         end
         local popup_buf = vim.api.nvim_win_get_buf(popup_win)
         local lines = vim.api.nvim_buf_get_lines(popup_buf, 0, -1, false)
-        local ns = assert(vim.api.nvim_get_namespaces().gitsigns_popup)
+        local ns = assert(vim.api.nvim_get_namespaces().jjsigns_popup)
         local marks = vim.api.nvim_buf_get_extmarks(popup_buf, ns, 0, -1, { details = true })
 
         local deleted_row, added_row
@@ -567,7 +567,7 @@ describe('blame', function()
           local col = mark[3]
           local details = assert(mark[4])
           if
-            details.hl_group == 'GitSignsDeletePreview'
+            details.hl_group == 'JjSignsDeletePreview'
             and row == deleted_row
             and col == 0
             and details.end_row == deleted_row + 1
@@ -575,7 +575,7 @@ describe('blame', function()
           then
             deleted_eol0 = true
           elseif
-            details.hl_group == 'GitSignsAddPreview'
+            details.hl_group == 'JjSignsAddPreview'
             and row == added_row
             and col == 0
             and details.end_row == added_row + 1

@@ -33,7 +33,7 @@ describe('debounce', function()
       _G._debounce_hash_calls = nil
       _G._debounce_hash_fn_calls = nil
       _G._debounce_hash_fn_value = nil
-      package.loaded['gitsigns.debounce'] = nil
+      package.loaded['jjsigns.debounce'] = nil
     end)
   end)
 
@@ -62,7 +62,7 @@ describe('debounce', function()
         return proxy
       end
 
-      local debounce_trailing = require('gitsigns.debounce').debounce_trailing
+      local debounce_trailing = require('jjsigns.debounce').debounce_trailing
       local debounced = debounce_trailing(1, function()
         error('GS_DEBOUNCE_TEST_CLOSE')
       end)
@@ -76,7 +76,7 @@ describe('debounce', function()
 
   it('prints a full stacktrace if the function errors', function()
     exec_lua(function()
-      local debounce_trailing = require('gitsigns.debounce').debounce_trailing
+      local debounce_trailing = require('jjsigns.debounce').debounce_trailing
       local debounced = debounce_trailing(1, function()
         error('GS_DEBOUNCE_TEST_STACK')
       end)
@@ -90,13 +90,13 @@ describe('debounce', function()
       messages = messages:gsub('\\', '/')
       assert(messages:match('debounce_spec.lua:%d+: GS_DEBOUNCE_TEST_STACK'), messages)
       assert(messages:match('stack traceback'), messages)
-      assert(messages:match('lua/gitsigns/debounce.lua'), messages)
+      assert(messages:match('lua/jjsigns/debounce.lua'), messages)
     end)
   end)
 
   it('debounces independently by hash key', function()
     exec_lua(function()
-      local debounce_trailing = require('gitsigns.debounce').debounce_trailing
+      local debounce_trailing = require('jjsigns.debounce').debounce_trailing
 
       _G._debounce_hash_calls = {}
 
@@ -126,7 +126,7 @@ describe('debounce', function()
 
   it('accepts a hash function for ids', function()
     exec_lua(function()
-      local debounce_trailing = require('gitsigns.debounce').debounce_trailing
+      local debounce_trailing = require('jjsigns.debounce').debounce_trailing
 
       _G._debounce_hash_fn_calls = {}
 

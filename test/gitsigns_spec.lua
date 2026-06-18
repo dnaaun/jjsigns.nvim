@@ -6,7 +6,7 @@ local check = helpers.check
 local cleanup = helpers.cleanup
 local clear = helpers.clear
 local command = api.nvim_command
-local command_wait_gitsigns_update = helpers.command_wait_gitsigns_update
+local command_wait_jjsigns_update = helpers.command_wait_jjsigns_update
 local edit = helpers.edit
 local eq = helpers.eq
 local eq_path = helpers.eq_path
@@ -21,7 +21,7 @@ local match_debug_messages = helpers.match_debug_messages
 local match_lines = helpers.match_lines
 local n, p, np = helpers.n, helpers.p, helpers.np
 local path_pattern = helpers.path_pattern
-local setup_gitsigns = helpers.setup_gitsigns
+local setup_jjsigns = helpers.setup_jjsigns
 local setup_test_repo = helpers.setup_test_repo
 local split = vim.split
 local test_config = helpers.test_config
@@ -46,7 +46,7 @@ local revparse_pat = ('system.system: git .* rev-parse --show-toplevel --absolut
 )
 local attach_open_pat = 'attach%.attach%(1%): Attaching %(trigger=Buf%u%l+%u%l+%)'
 
-describe('gitsigns (with screen)', function()
+describe('jjsigns (with screen)', function()
   local screen --- @type test.screen
   local config --- @type table
 
@@ -94,7 +94,7 @@ describe('gitsigns (with screen)', function()
   end)
 
   it('can run basic setup', function()
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     check({ status = {}, signs = {} })
   end)
 
@@ -104,7 +104,7 @@ describe('gitsigns (with screen)', function()
     screen:try_resize(20, 6)
     setup_test_repo({ no_add = true })
     config.watch_gitdir.enable = true
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     edit(test_file)
 
     match_dag({
@@ -132,7 +132,7 @@ describe('gitsigns (with screen)', function()
   end)
 
   it('can open files not in a git repo', function()
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     local tmpfile = helpers.tempname()
     edit(tmpfile)
 
@@ -142,7 +142,7 @@ describe('gitsigns (with screen)', function()
       np('Not in git repo'),
       np('Empty git obj'),
     })
-    command('Gitsigns clear_debug')
+    command('Jjsigns clear_debug')
 
     insert('line')
     command('write')
@@ -158,7 +158,7 @@ describe('gitsigns (with screen)', function()
   describe('when attaching', function()
     before_each(function()
       setup_test_repo()
-      setup_gitsigns(config)
+      setup_jjsigns(config)
     end)
 
     it('can setup mappings', function()
@@ -169,12 +169,12 @@ describe('gitsigns (with screen)', function()
 
         -- Check all keymaps get set
         match_lines(res, {
-          n('n  mhS         *@<Cmd>lua require"gitsigns".stage_buffer()<CR>'),
-          n('n  mhU         *@<Cmd>lua require"gitsigns".reset_buffer_index()<CR>'),
-          n('n  mhp         *@<Cmd>lua require"gitsigns".preview_hunk()<CR>'),
-          n('n  mhr         *@<Cmd>lua require"gitsigns".reset_hunk()<CR>'),
-          n('n  mhs         *@<Cmd>lua require"gitsigns".stage_hunk()<CR>'),
-          n('n  mhu         *@<Cmd>lua require"gitsigns".undo_stage_hunk()<CR>'),
+          n('n  mhS         *@<Cmd>lua require"jjsigns".stage_buffer()<CR>'),
+          n('n  mhU         *@<Cmd>lua require"jjsigns".reset_buffer_index()<CR>'),
+          n('n  mhp         *@<Cmd>lua require"jjsigns".preview_hunk()<CR>'),
+          n('n  mhr         *@<Cmd>lua require"jjsigns".reset_hunk()<CR>'),
+          n('n  mhs         *@<Cmd>lua require"jjsigns".stage_hunk()<CR>'),
+          n('n  mhu         *@<Cmd>lua require"jjsigns".undo_stage_hunk()<CR>'),
         })
       end)
     end)
@@ -247,7 +247,7 @@ describe('gitsigns (with screen)', function()
         np('attach%.attach%(1%): File has %-diff attribute'),
       })
 
-      command('Gitsigns attach')
+      command('Jjsigns attach')
 
       match_debug_messages({
         'attach.attach(1): Attaching (trigger=BufReadPost)',
@@ -260,7 +260,7 @@ describe('gitsigns (with screen)', function()
 
       check({ status = { head = 'main' }, signs = {} })
 
-      command('Gitsigns attach --force')
+      command('Jjsigns attach --force')
 
       wait_for_attach()
       check({ status = { head = 'main', added = 0, changed = 0, removed = 0 }, signs = {} })
@@ -283,7 +283,7 @@ describe('gitsigns (with screen)', function()
         np('attach%.attach%(1%): File has %-diff attribute'),
       })
 
-      exec_lua([[require('gitsigns').attach({ force = true })]])
+      exec_lua([[require('jjsigns').attach({ force = true })]])
 
       wait_for_attach()
       check({ status = { head = 'main', added = 0, changed = 0, removed = 0 }, signs = {} })
@@ -307,7 +307,7 @@ describe('gitsigns (with screen)', function()
       })
 
       exec_lua([=[
-        require('gitsigns').attach({
+        require('jjsigns').attach({
           bufnr = vim.api.nvim_get_current_buf(),
           trigger = 'test',
           force = true,
@@ -336,7 +336,7 @@ describe('gitsigns (with screen)', function()
       })
 
       exec_lua(
-        [[require('gitsigns').attach({ bufnr = vim.api.nvim_get_current_buf(), force = true })]]
+        [[require('jjsigns').attach({ bufnr = vim.api.nvim_get_current_buf(), force = true })]]
       )
 
       wait_for_attach()
@@ -368,8 +368,8 @@ describe('gitsigns (with screen)', function()
         n('attach.attach(1): Not a path'),
       })
 
-      helpers.pcall_err(get_buf_var, 0, 'gitsigns_head')
-      helpers.pcall_err(get_buf_var, 0, 'gitsigns_status_dict')
+      helpers.pcall_err(get_buf_var, 0, 'jjsigns_head')
+      helpers.pcall_err(get_buf_var, 0, 'jjsigns_status_dict')
     end)
 
     it('can run copen', function()
@@ -394,7 +394,7 @@ describe('gitsigns (with screen)', function()
             added = { count = 2, start = 1, lines = { 'line1This', 'line2' } },
             removed = { count = 1, start = 1, lines = { 'This' } },
           },
-        }, exec_lua([[return require'gitsigns'.get_hunks()]]))
+        }, exec_lua([[return require'jjsigns'.get_hunks()]]))
       end)
     end)
   end)
@@ -404,21 +404,21 @@ describe('gitsigns (with screen)', function()
       config.current_line_blame = true
       config.current_line_blame_formatter = ' <author>, <author_time:%R> - <summary>'
       config.current_line_blame_opts = { delay = 1 }
-      setup_gitsigns(config)
+      setup_jjsigns(config)
     end)
 
     local function stub_notify_once()
       exec_lua(function()
-        _G.__gitsigns_notify_once_orig = vim.notify_once
+        _G.__jjsigns_notify_once_orig = vim.notify_once
         vim.notify_once = function() end
       end)
     end
 
     local function restore_notify_once()
       exec_lua(function()
-        if _G.__gitsigns_notify_once_orig then
-          vim.notify_once = _G.__gitsigns_notify_once_orig
-          _G.__gitsigns_notify_once_orig = nil
+        if _G.__jjsigns_notify_once_orig then
+          vim.notify_once = _G.__jjsigns_notify_once_orig
+          _G.__jjsigns_notify_once_orig = nil
         end
       end)
     end
@@ -490,7 +490,7 @@ describe('gitsigns (with screen)', function()
       stub_notify_once()
 
       exec_lua(function()
-        require('gitsigns.config').config.current_line_blame_formatter = function()
+        require('jjsigns.config').config.current_line_blame_formatter = function()
           return 'not virt_text'
         end
       end)
@@ -501,7 +501,7 @@ describe('gitsigns (with screen)', function()
       check({ signs = {} })
 
       expectf(function()
-        local line = exec_lua('return vim.b.gitsigns_blame_line')
+        local line = exec_lua('return vim.b.jjsigns_blame_line')
         return line ~= nil and line ~= 'not virt_text' and line:match('^ You, ') ~= nil
       end)
     end)
@@ -523,7 +523,7 @@ describe('gitsigns (with screen)', function()
         virt_text_pos = 'right_align',
         delay = 1,
       }
-      setup_gitsigns(config)
+      setup_jjsigns(config)
     end)
 
     it('with nowrap', function()
@@ -690,7 +690,7 @@ describe('gitsigns (with screen)', function()
         { field = 'blame_formatter', value = true },
       }) do
         local result = exec_lua(function(field, value)
-          local ok, err = pcall(require('gitsigns.config').build, {
+          local ok, err = pcall(require('jjsigns.config').build, {
             [field] = value,
           })
           return {
@@ -708,7 +708,7 @@ describe('gitsigns (with screen)', function()
   describe('on_attach()', function()
     it('can prevent attaching to a buffer', function()
       setup_test_repo({ no_add = true })
-      setup_gitsigns(config, true)
+      setup_jjsigns(config, true)
 
       edit(test_file)
       match_debug_messages({
@@ -736,15 +736,15 @@ describe('gitsigns (with screen)', function()
       git('add', test_file)
       git('commit', '-m', 'commit on main')
 
-      -- Don't setup gitsigns until the repo has two commits
-      setup_gitsigns(config)
+      -- Don't setup jjsigns until the repo has two commits
+      setup_jjsigns(config)
 
       check({
         status = { head = 'main', added = 0, changed = 0, removed = 0 },
         signs = {},
       })
 
-      command('Gitsigns change_base ~')
+      command('Jjsigns change_base ~')
 
       check({
         status = { head = 'main', added = 1, changed = 0, removed = 0 },
@@ -763,7 +763,7 @@ describe('gitsigns (with screen)', function()
       end)
 
       it('apply basic signs', function()
-        setup_gitsigns(config)
+        setup_jjsigns(config)
         edit(test_file)
         command('set signcolumn=yes')
 
@@ -785,7 +785,7 @@ describe('gitsigns (with screen)', function()
 
       it('can enable numhl', function()
         config.numhl = true
-        setup_gitsigns(config)
+        setup_jjsigns(config)
         edit(test_file)
         command('set signcolumn=no')
         command('set number')
@@ -825,7 +825,7 @@ describe('gitsigns (with screen)', function()
       end)
 
       it('attaches to newly created files', function()
-        setup_gitsigns(config)
+        setup_jjsigns(config)
         edit(newfile)
         local messages = {
           'attach.attach(1): Attaching (trigger=BufNewFile)',
@@ -868,7 +868,7 @@ describe('gitsigns (with screen)', function()
       end)
 
       it('can add untracked files to the index', function()
-        setup_gitsigns(config)
+        setup_jjsigns(config)
 
         edit(newfile)
         feed('iline<esc>')
@@ -891,7 +891,7 @@ describe('gitsigns (with screen)', function()
 
       it('can manually attach untracked files with --force (#1026)', function()
         config.attach_to_untracked = false
-        setup_gitsigns(config)
+        setup_jjsigns(config)
 
         edit(newfile)
         feed('iline<esc>')
@@ -902,14 +902,14 @@ describe('gitsigns (with screen)', function()
           signs = {},
         })
 
-        command('Gitsigns attach --force')
+        command('Jjsigns attach --force')
 
         check({
           status = { head = 'main', added = 1, changed = 0, removed = 0 },
           signs = { untracked = 1 },
         })
 
-        command('Gitsigns stage_buffer')
+        command('Jjsigns stage_buffer')
 
         check({
           status = { head = 'main', added = 0, changed = 0, removed = 0 },
@@ -919,7 +919,7 @@ describe('gitsigns (with screen)', function()
 
       it('tracks files in new repos', function()
         config.watch_gitdir.enable = true
-        setup_gitsigns(config)
+        setup_jjsigns(config)
         helpers.touch(newfile)
         edit(newfile)
 
@@ -947,7 +947,7 @@ describe('gitsigns (with screen)', function()
       end)
 
       it('can detach from buffers', function()
-        setup_gitsigns(config)
+        setup_jjsigns(config)
         edit(test_file)
         command('set signcolumn=yes')
 
@@ -966,13 +966,13 @@ describe('gitsigns (with screen)', function()
           signs = { topdelete = 1, added = 1, changed = 1, delete = 1, changedelete = 1 },
         })
 
-        command('Gitsigns detach')
+        command('Jjsigns detach')
 
         check({ status = {}, signs = {} })
       end)
 
       it('can stages file with merge conflicts', function()
-        setup_gitsigns(config)
+        setup_jjsigns(config)
         command('set signcolumn=yes')
 
         -- Edit a file and commit it on main branch
@@ -1017,7 +1017,7 @@ describe('gitsigns (with screen)', function()
       end)
 
       it('handle files with spaces', function()
-        setup_gitsigns(config)
+        setup_jjsigns(config)
         command('set signcolumn=yes')
 
         local spacefile = scratch .. '/a b c d'
@@ -1057,7 +1057,7 @@ describe('gitsigns (with screen)', function()
     write_to_file(scratch .. '/t2.txt', { 'hello ben' })
     write_to_file(scratch .. '/t3.txt', { 'hello lewis' })
 
-    setup_gitsigns(config)
+    setup_jjsigns(config)
 
     helpers.exc_exec('vimgrep ben ' .. scratch .. '/*')
 
@@ -1087,10 +1087,10 @@ describe('gitsigns (with screen)', function()
     end, 10)
 
     match_debug_messages({
-      'gitsigns.attach_autocmd(2): Attaching is disabled',
-      n('gitsigns.attach_autocmd(3): Attaching is disabled'),
-      n('gitsigns.attach_autocmd(4): Attaching is disabled'),
-      n('gitsigns.attach_autocmd(5): Attaching is disabled'),
+      'jjsigns.attach_autocmd(2): Attaching is disabled',
+      n('jjsigns.attach_autocmd(3): Attaching is disabled'),
+      n('jjsigns.attach_autocmd(4): Attaching is disabled'),
+      n('jjsigns.attach_autocmd(5): Attaching is disabled'),
     })
   end)
 
@@ -1100,18 +1100,18 @@ describe('gitsigns (with screen)', function()
 
     -- Disable debug_mode so the sha is calculated
     config.debug_mode = false
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     edit(test_file)
 
     -- SHA is not deterministic so just check it can be cast as a hex value
     expectf(function()
-      helpers.neq(nil, tonumber('0x' .. get_buf_var(0, 'gitsigns_head')))
+      helpers.neq(nil, tonumber('0x' .. get_buf_var(0, 'jjsigns_head')))
     end)
   end)
 
   it('handles a quick undo', function()
     setup_test_repo()
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     edit(test_file)
     -- This test isn't deterministic so run it a few times
     for _ = 1, 3 do
@@ -1124,11 +1124,11 @@ describe('gitsigns (with screen)', function()
 
   it('redraws statuscolumn signs after async updates', function()
     setup_test_repo()
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     edit(test_file)
     exec_lua(function()
       vim.wo.signcolumn = 'yes'
-      vim.wo.statuscolumn = "%{%v:lua.require'gitsigns'.statuscolumn()%}"
+      vim.wo.statuscolumn = "%{%v:lua.require'jjsigns'.statuscolumn()%}"
     end)
 
     wait_for_attach()
@@ -1144,7 +1144,7 @@ describe('gitsigns (with screen)', function()
   it('handles filenames with unicode characters', function()
     screen:try_resize(20, 2)
     setup_test_repo()
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     local uni_filename = scratch .. '/föobær'
 
     write_to_file(uni_filename, { 'Lorem ipsum' })
@@ -1185,7 +1185,7 @@ describe('gitsigns (with screen)', function()
     screen:attach()
     screen:try_resize(20, 4)
     setup_test_repo()
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     edit(test_file)
     feed('dd')
 
@@ -1228,7 +1228,7 @@ describe('gitsigns (with screen)', function()
 
   it('shows "No newline at end of file" in preview popup', function()
     setup_test_repo({ test_file_text = { 'a' } })
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     screen:try_resize(30, 5)
     edit(test_file)
     wait_for_attach()
@@ -1238,10 +1238,10 @@ describe('gitsigns (with screen)', function()
     f:write('a') -- Write without trailing newline
     f:close()
 
-    command_wait_gitsigns_update('checktime')
+    command_wait_jjsigns_update('checktime')
     expectf(function()
       local hunk = exec_lua(function()
-        return require('gitsigns').get_hunks()[1]
+        return require('jjsigns').get_hunks()[1]
       end)
       return hunk and (hunk.added.no_nl_at_eof or hunk.removed.no_nl_at_eof)
     end)
@@ -1250,7 +1250,7 @@ describe('gitsigns (with screen)', function()
   end)
 end)
 
-describe('gitsigns attach', function()
+describe('jjsigns attach', function()
   local config --- @type table
 
   before_each(function()
@@ -1265,12 +1265,12 @@ describe('gitsigns attach', function()
   end)
 
   --- @param bufnr integer
-  --- @param ctx Gitsigns.GitContext
+  --- @param ctx Jjsigns.GitContext
   local function attach_with_context(bufnr, ctx)
     exec_lua(function(bufnr0, ctx0)
-      local async = require('gitsigns.async')
+      local async = require('jjsigns.async')
       async
-        .run(require('gitsigns.attach').attach, {
+        .run(require('jjsigns.attach').attach, {
           bufnr = bufnr0,
           ctx = ctx0,
           trigger = 'test',
@@ -1297,14 +1297,14 @@ describe('gitsigns attach', function()
     git('add', path1, path2)
 
     config.base = 'HEAD'
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     edit(path1)
     wait_for_attach()
     command('write')
     expectf(function()
       return exec_lua(function()
         local bufnr = vim.api.nvim_get_current_buf()
-        local cache = require('gitsigns.cache').cache[bufnr]
+        local cache = require('jjsigns.cache').cache[bufnr]
         return cache ~= nil and cache.git_obj.file == vim.api.nvim_buf_get_name(bufnr)
       end)
     end)
@@ -1314,12 +1314,12 @@ describe('gitsigns attach', function()
     -- Note this test is testing the attach logic before the git_obj
     -- is created.
 
-    setup_gitsigns(config)
+    setup_jjsigns(config)
 
     -- Since this bufname isn't a valid path, Nvim will not trigger the
     -- BufNewFile autocmd, therefore we need to manually attach.
     edit(('fugitive://%s/.git//'):format(scratch))
-    command('Gitsigns attach')
+    command('Jjsigns attach')
     match_debug_messages({
       'attach.attach(1): Empty git obj',
     })
@@ -1335,12 +1335,12 @@ describe('gitsigns attach', function()
     git('add', file)
     git('commit', '-m', 'add nested file')
 
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     edit(file)
     wait_for_attach()
 
     local result = exec_lua(function(bufnr)
-      local cache = assert(require('gitsigns.cache').cache[bufnr])
+      local cache = assert(require('jjsigns.cache').cache[bufnr])
       return {
         relpath = cache.git_obj.relpath,
         object_name = cache.git_obj.object_name or '',
@@ -1364,7 +1364,7 @@ describe('gitsigns attach', function()
     git('commit', '-m', 'add relative file')
 
     config.auto_attach = false
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     edit(file)
 
     attach_with_context(api.nvim_get_current_buf(), {
@@ -1374,7 +1374,7 @@ describe('gitsigns attach', function()
     })
 
     local result = exec_lua(function(bufnr)
-      local cache = assert(require('gitsigns.cache').cache[bufnr])
+      local cache = assert(require('jjsigns.cache').cache[bufnr])
       return {
         relpath = cache.git_obj.relpath,
         object_name = cache.git_obj.object_name or '',
@@ -1395,18 +1395,18 @@ describe('gitsigns attach', function()
     git('commit', '-m', 'commit 1')
     command('cd ' .. vim.fs.dirname(file))
 
-    setup_gitsigns(config)
+    setup_jjsigns(config)
 
     edit('test')
     wait_for_attach()
 
-    command('Gitsigns show')
+    command('Jjsigns show')
 
     local show_bufnr --- @type integer?
     expectf(function()
       show_bufnr = exec_lua(function()
         local bufnr = vim.api.nvim_get_current_buf()
-        if not vim.api.nvim_buf_get_name(bufnr):match('^gitsigns://') then
+        if not vim.api.nvim_buf_get_name(bufnr):match('^jjsigns://') then
           return
         end
         return bufnr
@@ -1416,11 +1416,11 @@ describe('gitsigns attach', function()
     wait_for_attach(show_bufnr)
 
     local gfile, toplevel, gitdir, abbrev_head = exec_lua(function()
-      local git_obj = assert(require('gitsigns.cache').cache[1]).git_obj
+      local git_obj = assert(require('jjsigns.cache').cache[1]).git_obj
       return git_obj.file, git_obj.repo.toplevel, git_obj.repo.gitdir, git_obj.repo.abbrev_head
     end)
 
-    eq(('gitsigns://%s//:0:sub/test'):format(gitdir), api.nvim_buf_get_name(0))
+    eq(('jjsigns://%s//:0:sub/test'):format(gitdir), api.nvim_buf_get_name(0))
 
     eq_path(file, gfile)
     eq_path(scratch, toplevel)
@@ -1430,14 +1430,14 @@ describe('gitsigns attach', function()
 
   it('does not error after git system callbacks (#1425)', function()
     setup_test_repo()
-    setup_gitsigns(config)
+    setup_jjsigns(config)
 
     edit(test_file)
     wait_for_attach()
 
     local ok = exec_lua(function()
-      local async = require('gitsigns.async')
-      local git_cmd = require('gitsigns.git.cmd')
+      local async = require('jjsigns.async')
+      local git_cmd = require('jjsigns.git.cmd')
 
       return async
         .run(function()
@@ -1459,7 +1459,7 @@ describe('gitsigns attach', function()
 
   it('does not error when attaching to files out of tree (#1297)', function()
     setup_test_repo()
-    setup_gitsigns(config)
+    setup_jjsigns(config)
 
     exec_lua(function(scratch0)
       vim.env.GIT_DIR = scratch0 .. '/.git'

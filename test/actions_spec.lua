@@ -4,7 +4,7 @@ local api = helpers.api
 local check = helpers.check
 local clear = helpers.clear
 local command = api.nvim_command
-local command_wait_gitsigns_update = helpers.command_wait_gitsigns_update
+local command_wait_jjsigns_update = helpers.command_wait_jjsigns_update
 local edit = helpers.edit
 local eq = helpers.eq
 local exec_lua = helpers.exec_lua
@@ -12,7 +12,7 @@ local feed = helpers.feed
 local expectf = helpers.expectf
 local git = helpers.git
 local reset_buffer_index = helpers.reset_buffer_index
-local setup_gitsigns = helpers.setup_gitsigns
+local setup_jjsigns = helpers.setup_jjsigns
 local setup_test_repo = helpers.setup_test_repo
 local stage_hunk = helpers.stage_hunk
 local test_config = helpers.test_config
@@ -27,7 +27,7 @@ helpers.env()
 local function expect_hunks(exp_hunks)
   expectf(function()
     --- @type table[]
-    local hunks = exec_lua("return require('gitsigns').get_hunks()")
+    local hunks = exec_lua("return require('jjsigns').get_hunks()")
     if #exp_hunks ~= #hunks then
       local msg = {} --- @type string[]
       msg[#msg + 1] = ''
@@ -58,7 +58,7 @@ end
 
 local function complete(arglead, line)
   return exec_lua(function(arglead0, line0)
-    return require('gitsigns.cli').complete(arglead0, line0)
+    return require('jjsigns.cli').complete(arglead0, line0)
   end, arglead, line)
 end
 
@@ -75,7 +75,7 @@ describe('actions', function()
     scratch = helpers.scratch
     test_file = helpers.test_file
     helpers.chdir_tmp()
-    setup_gitsigns(test_config)
+    setup_jjsigns(test_config)
   end)
 
   it('works with commands', function()
@@ -88,25 +88,25 @@ describe('actions', function()
       signs = { changed = 1 },
     })
 
-    command_wait_gitsigns_update('Gitsigns stage_hunk')
+    command_wait_jjsigns_update('Jjsigns stage_hunk')
     check({
       status = { head = 'main', added = 0, changed = 0, removed = 0 },
       signs = {},
     })
 
-    command_wait_gitsigns_update('Gitsigns undo_stage_hunk')
+    command_wait_jjsigns_update('Jjsigns undo_stage_hunk')
     check({
       status = { head = 'main', added = 0, changed = 1, removed = 0 },
       signs = { changed = 1 },
     })
 
-    command_wait_gitsigns_update('Gitsigns stage_hunk')
+    command_wait_jjsigns_update('Jjsigns stage_hunk')
     check({
       status = { head = 'main', added = 0, changed = 0, removed = 0 },
       signs = {},
     })
 
-    command_wait_gitsigns_update('Gitsigns stage_hunk')
+    command_wait_jjsigns_update('Jjsigns stage_hunk')
     check({
       status = { head = 'main', added = 0, changed = 1, removed = 0 },
       signs = { changed = 1 },
@@ -120,19 +120,19 @@ describe('actions', function()
       signs = { changed = 2 },
     })
 
-    command_wait_gitsigns_update('Gitsigns stage_buffer')
+    command_wait_jjsigns_update('Jjsigns stage_buffer')
     check({
       status = { head = 'main', added = 0, changed = 0, removed = 0 },
       signs = {},
     })
 
-    command_wait_gitsigns_update('Gitsigns reset_buffer_index')
+    command_wait_jjsigns_update('Jjsigns reset_buffer_index')
     check({
       status = { head = 'main', added = 0, changed = 2, removed = 0 },
       signs = { changed = 2 },
     })
 
-    command_wait_gitsigns_update('Gitsigns reset_hunk')
+    command_wait_jjsigns_update('Jjsigns reset_hunk')
     check({
       status = { head = 'main', added = 0, changed = 1, removed = 0 },
       signs = { changed = 1 },
@@ -148,10 +148,10 @@ describe('actions', function()
     })
 
     local lines = exec_lua(function()
-      local async = require('gitsigns.async')
+      local async = require('jjsigns.async')
       local commit_buf = async
         .run(function()
-          return require('gitsigns.actions.show_commit')('main', 'edit')
+          return require('jjsigns.actions.show_commit')('main', 'edit')
         end)
         :wait(1000)
 
@@ -164,54 +164,51 @@ describe('actions', function()
   end)
 
   it('completes action command arguments', function()
-    eq(true, vim.tbl_contains(complete('', 'vertical Gits '), 'attach'))
-    eq({ '--bufnr=', '--force', '--trigger=' }, complete('', 'Gitsigns attach '))
-    eq({ '--ignore_whitespace' }, complete('', 'Gitsigns blame '))
-    eq({ '--full', '--ignore_whitespace' }, complete('', 'Gitsigns blame_line '))
-    eq({ '--force' }, complete('--f', 'Gitsigns attach --f'))
-    eq({ '--force=true', '--force=false' }, complete('--force=', 'Gitsigns attach --force='))
-    eq({ '--trigger=' }, complete('--t', 'Gitsigns attach --t'))
-    eq({ '--force' }, complete('--f', 'vertical Gitsigns attach --f'))
-    eq({ '--force' }, complete('--f', 'vertical Gits attach --f'))
+    eq(true, vim.tbl_contains(complete('', 'vertical Jjs '), 'attach'))
+    eq({ '--bufnr=', '--force', '--trigger=' }, complete('', 'Jjsigns attach '))
+    eq({ '--ignore_whitespace' }, complete('', 'Jjsigns blame '))
+    eq({ '--full', '--ignore_whitespace' }, complete('', 'Jjsigns blame_line '))
+    eq({ '--force' }, complete('--f', 'Jjsigns attach --f'))
+    eq({ '--force=true', '--force=false' }, complete('--force=', 'Jjsigns attach --force='))
+    eq({ '--trigger=' }, complete('--t', 'Jjsigns attach --t'))
+    eq({ '--force' }, complete('--f', 'vertical Jjsigns attach --f'))
+    eq({ '--force' }, complete('--f', 'vertical Jjs attach --f'))
 
-    eq({ 'true', 'false', '--global' }, complete('', 'Gitsigns change_base main '))
+    eq({ 'true', 'false', '--global' }, complete('', 'Jjsigns change_base main '))
     eq(
       { '--global=true', '--global=false' },
-      complete('--global=', 'Gitsigns change_base main --global=')
+      complete('--global=', 'Jjsigns change_base main --global=')
     )
-    eq({ '--split=', '--vertical' }, complete('--', 'Gitsigns diffthis --'))
+    eq({ '--split=', '--vertical' }, complete('--', 'Jjsigns diffthis --'))
     eq(
       { '--vertical=true', '--vertical=false' },
-      complete('--vertical=', 'Gitsigns diffthis --vertical=')
+      complete('--vertical=', 'Jjsigns diffthis --vertical=')
     )
     eq({
       '--split=aboveleft',
       '--split=belowright',
       '--split=topleft',
       '--split=botright',
-    }, complete('--split=', 'Gitsigns diffthis --split='))
-    eq({ 'vsplit', 'tabnew' }, complete('', 'Gitsigns show_commit main '))
-    eq({ 'next' }, complete('n', 'Gitsigns nav_hunk n'))
+    }, complete('--split=', 'Jjsigns diffthis --split='))
+    eq({ 'vsplit', 'tabnew' }, complete('', 'Jjsigns show_commit main '))
+    eq({ 'next' }, complete('n', 'Jjsigns nav_hunk n'))
     eq(
       { '--target=unstaged', '--target=staged', '--target=all' },
-      complete('--target=', 'Gitsigns next_hunk --target=')
+      complete('--target=', 'Jjsigns next_hunk --target=')
     )
-    eq({ '--full' }, complete('--f', 'Gitsigns blame_line --f'))
-    eq({ '--full=true', '--full=false' }, complete('--full=', 'Gitsigns blame_line --full='))
-    eq({ '--open' }, complete('--o', 'Gitsigns setqflist attached --o'))
-    eq(
-      { '--open=true', '--open=false' },
-      complete('--open=', 'Gitsigns setqflist attached --open=')
-    )
-    eq({}, complete('', 'Gitsigns stage_hunk '))
-    eq({}, complete('--g', 'Gitsigns reset_hunk --g'))
-    eq({ 'attached', 'all' }, complete('', 'Gitsigns setloclist 0 '))
-    eq({ 'true', 'false', 'nil' }, complete('', 'Gitsigns toggle_signs '))
+    eq({ '--full' }, complete('--f', 'Jjsigns blame_line --f'))
+    eq({ '--full=true', '--full=false' }, complete('--full=', 'Jjsigns blame_line --full='))
+    eq({ '--open' }, complete('--o', 'Jjsigns setqflist attached --o'))
+    eq({ '--open=true', '--open=false' }, complete('--open=', 'Jjsigns setqflist attached --open='))
+    eq({}, complete('', 'Jjsigns stage_hunk '))
+    eq({}, complete('--g', 'Jjsigns reset_hunk --g'))
+    eq({ 'attached', 'all' }, complete('', 'Jjsigns setloclist 0 '))
+    eq({ 'true', 'false', 'nil' }, complete('', 'Jjsigns toggle_signs '))
   end)
 
   it('parses named flag assignments', function()
     local result = exec_lua(function()
-      local parse_args = require('gitsigns.cli.argparse').parse_args
+      local parse_args = require('jjsigns.cli.argparse').parse_args
       local _, named = parse_args('attach --force=true --trigger=git=hook --bufnr=5 key=va=lue')
       local _, extra =
         parse_args('blame --extra_opts=--ignore-revs-file=.git-blame-ignore-revs --extra_opts=-M')
@@ -234,8 +231,8 @@ describe('actions', function()
 
   it('runs actions with named flags', function()
     local result = exec_lua(function()
-      local actions = require('gitsigns.actions')
-      local cli = require('gitsigns.cli')
+      local actions = require('jjsigns.actions')
+      local cli = require('jjsigns.cli')
 
       local saved = {
         attach = actions.attach,
@@ -347,7 +344,7 @@ describe('actions', function()
     eq(4, result.setqflist.nr)
   end)
 
-  it('does not emit duplicate GitSignsUpdate events for stage_hunk', function()
+  it('does not emit duplicate JjSignsUpdate events for stage_hunk', function()
     setup_test_repo()
     edit(test_file)
 
@@ -358,19 +355,19 @@ describe('actions', function()
     })
 
     exec_lua(function()
-      _G.test_gitsigns_update_events = {}
+      _G.test_jjsigns_update_events = {}
 
       vim.api.nvim_create_autocmd('User', {
-        group = vim.api.nvim_create_augroup('GitsignsUpdateTest', { clear = true }),
-        pattern = 'GitSignsUpdate',
+        group = vim.api.nvim_create_augroup('JjsignsUpdateTest', { clear = true }),
+        pattern = 'JjSignsUpdate',
         callback = function(args)
           local bufnr = args.data and args.data.buffer
           if bufnr ~= vim.api.nvim_get_current_buf() then
             return
           end
 
-          local status = vim.b[bufnr].gitsigns_status_dict
-          _G.test_gitsigns_update_events[#_G.test_gitsigns_update_events + 1] = {
+          local status = vim.b[bufnr].jjsigns_status_dict
+          _G.test_jjsigns_update_events[#_G.test_jjsigns_update_events + 1] = {
             added = status and status.added,
             changed = status and status.changed,
             removed = status and status.removed,
@@ -380,7 +377,7 @@ describe('actions', function()
       })
     end)
 
-    command_wait_gitsigns_update('Gitsigns stage_hunk')
+    command_wait_jjsigns_update('Jjsigns stage_hunk')
     check({
       status = { head = 'main', added = 0, changed = 0, removed = 0 },
       signs = {},
@@ -394,7 +391,7 @@ describe('actions', function()
           removed = 0,
           head = 'main',
         },
-      }, exec_lua('return _G.test_gitsigns_update_events'))
+      }, exec_lua('return _G.test_jjsigns_update_events'))
     end, 10)
   end)
 
@@ -406,9 +403,9 @@ describe('actions', function()
     expect_hunks({ '@@ -1 +2,2 @@' })
 
     api.nvim_win_set_cursor(0, { 2, 0 })
-    command_wait_gitsigns_update('Gitsigns stage_hunk')
+    command_wait_jjsigns_update('Jjsigns stage_hunk')
 
-    command_wait_gitsigns_update('Gitsigns undo_stage_hunk')
+    command_wait_jjsigns_update('Jjsigns undo_stage_hunk')
     expect_hunks({ '@@ -1 +2,2 @@' })
   end)
 
@@ -424,8 +421,8 @@ describe('actions', function()
     })
 
     exec_lua(function()
-      local async = require('gitsigns.async')
-      async.run(require('gitsigns.actions.diffthis').diffthis, nil, {}):wait(1000)
+      local async = require('jjsigns.async')
+      async.run(require('jjsigns.actions.diffthis').diffthis, nil, {}):wait(1000)
     end)
 
     local rev_win --- @type integer?
@@ -435,7 +432,7 @@ describe('actions', function()
       for _, win in ipairs(api.nvim_list_wins()) do
         if win ~= current then
           local buf = api.nvim_win_get_buf(win)
-          if api.nvim_buf_get_name(buf):find('^gitsigns://') then
+          if api.nvim_buf_get_name(buf):find('^jjsigns://') then
             rev_win = win
             break
           end
@@ -543,7 +540,7 @@ describe('actions', function()
     describe('can stage modified-remove hunks', function()
       before_each(function()
         set_lines(2, 7, { 'c1', 'c2', 'c3' })
-        command_wait_gitsigns_update('write')
+        command_wait_jjsigns_update('write')
         expect_hunks({ '@@ -3,5 +3,3 @@' })
       end)
 
@@ -602,18 +599,18 @@ describe('actions', function()
     })
 
     check_cursor({ 6, 0 })
-    command('Gitsigns next_hunk') -- Wrap
+    command('Jjsigns next_hunk') -- Wrap
     check_cursor({ 1, 0 })
-    command('Gitsigns next_hunk')
+    command('Jjsigns next_hunk')
     check_cursor({ 4, 0 })
-    command('Gitsigns next_hunk')
+    command('Jjsigns next_hunk')
     check_cursor({ 6, 0 })
 
-    command('Gitsigns prev_hunk')
+    command('Jjsigns prev_hunk')
     check_cursor({ 4, 0 })
-    command('Gitsigns prev_hunk')
+    command('Jjsigns prev_hunk')
     check_cursor({ 1, 0 })
-    command('Gitsigns prev_hunk') -- Wrap
+    command('Jjsigns prev_hunk') -- Wrap
     check_cursor({ 6, 0 })
   end)
 
@@ -633,20 +630,20 @@ describe('actions', function()
     command('set nowrapscan')
 
     check_cursor({ 1, 0 })
-    command('Gitsigns next_hunk')
+    command('Jjsigns next_hunk')
     check_cursor({ 4, 0 })
-    command('Gitsigns next_hunk')
+    command('Jjsigns next_hunk')
     check_cursor({ 6, 0 })
-    command('Gitsigns next_hunk')
+    command('Jjsigns next_hunk')
     check_cursor({ 6, 0 })
 
     feed('G')
     check_cursor({ 18, 0 })
-    command('Gitsigns prev_hunk')
+    command('Jjsigns prev_hunk')
     check_cursor({ 6, 0 })
-    command('Gitsigns prev_hunk')
+    command('Jjsigns prev_hunk')
     check_cursor({ 4, 0 })
-    command('Gitsigns prev_hunk')
+    command('Jjsigns prev_hunk')
     check_cursor({ 4, 0 })
   end)
 
@@ -660,9 +657,9 @@ describe('actions', function()
     })
 
     local line_count = exec_lua(function()
-      local Hunks = require('gitsigns.hunks')
+      local Hunks = require('jjsigns.hunks')
       local bufnr = vim.api.nvim_get_current_buf()
-      local cache = assert(require('gitsigns.cache').cache[bufnr])
+      local cache = assert(require('jjsigns.cache').cache[bufnr])
       local line_count0 = vim.api.nvim_buf_line_count(bufnr)
 
       cache.hunks = {
@@ -674,17 +671,17 @@ describe('actions', function()
     end)
 
     feed('gg')
-    command('Gitsigns next_hunk')
+    command('Jjsigns next_hunk')
     check_cursor({ 4, 0 })
 
-    command('Gitsigns next_hunk')
+    command('Jjsigns next_hunk')
     check_cursor({ line_count, 0 })
 
     eq(
       true,
       exec_lua(function()
         local bufnr = vim.api.nvim_get_current_buf()
-        local bcache = assert(require('gitsigns.cache').cache[bufnr])
+        local bcache = assert(require('jjsigns.cache').cache[bufnr])
         local hunk, index = bcache:get_cursor_hunk()
 
         return hunk ~= nil
@@ -697,9 +694,9 @@ describe('actions', function()
     eq(
       'Hunk 2 of 2',
       exec_lua(function()
-        require('gitsigns').preview_hunk()
+        require('jjsigns').preview_hunk()
 
-        local popup = require('gitsigns.popup')
+        local popup = require('jjsigns.popup')
         local win = assert(popup.is_open('hunk'))
         local title =
           assert(vim.api.nvim_buf_get_lines(vim.api.nvim_win_get_buf(win), 0, 1, false)[1])
@@ -710,13 +707,13 @@ describe('actions', function()
       end)
     )
 
-    command('Gitsigns next_hunk') -- Wrap
+    command('Jjsigns next_hunk') -- Wrap
     check_cursor({ 4, 0 })
 
     command('set nowrapscan')
     api.nvim_win_set_cursor(0, { 4, 0 })
 
-    command('Gitsigns next_hunk --count=2')
+    command('Jjsigns next_hunk --count=2')
     check_cursor({ line_count, 0 })
   end)
 
@@ -734,7 +731,7 @@ describe('actions', function()
     check({ status = { head = 'main', added = 0, changed = 0, removed = 0 } })
     feed('x')
     check({ status = { head = 'main', added = 0, changed = 1, removed = 0 } })
-    command_wait_gitsigns_update('Gitsigns stage_hunk')
+    command_wait_jjsigns_update('Jjsigns stage_hunk')
     check({ status = { head = 'main', added = 0, changed = 0, removed = 0 } })
   end)
 
@@ -756,7 +753,7 @@ describe('actions', function()
 
     expectf(function()
       local hunks = exec_lua(function(bufnr)
-        local cache = assert(require('gitsigns.cache').cache[bufnr])
+        local cache = assert(require('jjsigns.cache').cache[bufnr])
         return cache.hunks and #cache.hunks or 0
       end, api.nvim_get_current_buf())
 

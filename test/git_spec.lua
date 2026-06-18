@@ -50,9 +50,9 @@ describe('git', function()
 
   it('serializes repo operations across objects in the same repo', function()
     local result = exec_lua(function()
-      local async = require('gitsigns.async')
-      local Obj = require('gitsigns.git').Obj
-      local Repo = require('gitsigns.git.repo')
+      local async = require('jjsigns.async')
+      local Obj = require('jjsigns.git').Obj
+      local Repo = require('jjsigns.git.repo')
 
       return async
         .run(function()
@@ -113,8 +113,8 @@ describe('git', function()
     git('commit', '-m', 'rename file')
 
     local old_relpath = exec_lua(function(repo_dir)
-      local async = require('gitsigns.async')
-      local Repo = require('gitsigns.git.repo')
+      local async = require('jjsigns.async')
+      local Repo = require('jjsigns.git.repo')
 
       local repo = assert(async.run(Repo.get, repo_dir):wait(5000))
       local ret = async
@@ -142,8 +142,8 @@ describe('git', function()
     git('commit', '-m', 'rename file')
 
     local old_relpath = exec_lua(function(repo_dir)
-      local async = require('gitsigns.async')
-      local Repo = require('gitsigns.git.repo')
+      local async = require('jjsigns.async')
+      local Repo = require('jjsigns.git.repo')
 
       local repo = assert(async.run(Repo.get, repo_dir):wait(5000))
       local ret = async
@@ -169,8 +169,8 @@ describe('git', function()
     end
 
     local result = exec_lua(function(root)
-      local async = require('gitsigns.async')
-      local util = require('gitsigns.util')
+      local async = require('jjsigns.async')
+      local util = require('jjsigns.util')
 
       local unix_root = vim.trim(vim.fn.system({ 'cygpath', '--absolute', '--unix', root }))
       local mixed_root = vim.trim(vim.fn.system({ 'cygpath', '--absolute', '--mixed', root }))
@@ -225,11 +225,11 @@ describe('git', function()
     write_to_file(commit_editmsg, { '' }, { trailing_newline = false })
 
     local result = exec_lua(function(gitdir, file)
-      local async = require('gitsigns.async')
-      local Obj = require('gitsigns.git').Obj
-      local Repo = require('gitsigns.git.repo')
-      local config = require('gitsigns.config').config
-      local log = require('gitsigns.debug.log')
+      local async = require('jjsigns.async')
+      local Obj = require('jjsigns.git').Obj
+      local Repo = require('jjsigns.git.repo')
+      local config = require('jjsigns.config').config
+      local log = require('jjsigns.debug.log')
 
       config.debug_mode = true
 

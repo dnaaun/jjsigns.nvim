@@ -11,7 +11,7 @@ local expectf = helpers.expectf
 local git = helpers.git
 local enable_lua_treesitter_on_filetype = helpers.enable_lua_treesitter_on_filetype
 local require_source_hls = helpers.require_source_hls
-local setup_gitsigns = helpers.setup_gitsigns
+local setup_jjsigns = helpers.setup_jjsigns
 local setup_test_repo = helpers.setup_test_repo
 local test_config = helpers.test_config
 local test_file --- @type string
@@ -32,7 +32,7 @@ local function virt_hl_at_col(vline, col)
   local byte_col = 0
   for _, chunk in ipairs(vline) do
     local text, hl = chunk[1], chunk[2]
-    if contains_hl(hl, 'GitSignsDeleteVirtLn') then
+    if contains_hl(hl, 'JjSignsDeleteVirtLn') then
       local next_col = byte_col + #text
       if col < next_col then
         return hl
@@ -95,12 +95,12 @@ describe('word diff', function()
   before_each(function()
     clear()
     refresh_paths()
-    setup_gitsigns(vim.deepcopy(test_config))
+    setup_jjsigns(vim.deepcopy(test_config))
   end)
 
   it('treats whitespace padding as a single region', function()
     local rems, adds = exec_lua(function()
-      local diff = require('gitsigns.diff_int')
+      local diff = require('jjsigns.diff_int')
       local removed = { 'foo = 1', 'bar = 2' }
       local added = { 'foo     = 1', 'bar     = 2' }
       return diff.run_word_diff(removed, added)
@@ -117,7 +117,7 @@ describe('word diff', function()
 
   it('anchors indentation changes to the start of the line', function()
     local rems, adds = exec_lua(function()
-      local diff = require('gitsigns.diff_int')
+      local diff = require('jjsigns.diff_int')
       local removed = { '  foo = 1' }
       local added = { '        foo = 1' }
       return diff.run_word_diff(removed, added)
@@ -128,7 +128,7 @@ describe('word diff', function()
 
   it('highlights only changed characters inside a word', function()
     local rems, adds = exec_lua(function()
-      local diff = require('gitsigns.diff_int')
+      local diff = require('jjsigns.diff_int')
       local removed = { 'local foo = 1' }
       local added = { 'local foz = 1' }
       return diff.run_word_diff(removed, added)
@@ -139,7 +139,7 @@ describe('word diff', function()
 
   it('anchors additions after the last character', function()
     local rems, adds = exec_lua(function()
-      local diff = require('gitsigns.diff_int')
+      local diff = require('jjsigns.diff_int')
       local removed = { 'foo)' }
       local added = { 'foo)+' }
       return diff.run_word_diff(removed, added)
@@ -150,7 +150,7 @@ describe('word diff', function()
 
   it('anchors deletions at the last character', function()
     local rems, adds = exec_lua(function()
-      local diff = require('gitsigns.diff_int')
+      local diff = require('jjsigns.diff_int')
       local removed = { 'foo)' }
       local added = { 'foo' }
       return diff.run_word_diff(removed, added)
@@ -177,7 +177,7 @@ describe('inline preview', function()
     setup_test_repo({ test_file_text = { 'unchanged', 'éx' } })
     local config = vim.deepcopy(test_config)
     config.word_diff = true
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     edit(test_file)
 
     exec_lua(function()
@@ -186,11 +186,11 @@ describe('inline preview', function()
     end)
 
     exec_lua(function()
-      require('gitsigns').refresh()
+      require('jjsigns').refresh()
     end)
 
     expectf(function()
-      local hunks = exec_lua("return require('gitsigns').get_hunks()")
+      local hunks = exec_lua("return require('jjsigns').get_hunks()")
       eq(1, #hunks)
     end)
 
@@ -201,13 +201,13 @@ describe('inline preview', function()
     end)
 
     local start_col, end_col = exec_lua(function()
-      require('gitsigns.async').run(require('gitsigns.actions.preview').preview_hunk_inline):wait()
+      require('jjsigns.async').run(require('jjsigns.actions.preview').preview_hunk_inline):wait()
 
-      local ns = vim.api.nvim_get_namespaces().gitsigns_preview_inline
+      local ns = vim.api.nvim_get_namespaces().jjsigns_preview_inline
       local marks = vim.api.nvim_buf_get_extmarks(0, ns, 0, -1, { details = true })
       for _, mark in ipairs(marks) do
         local details = mark[4]
-        if details and details.hl_group == 'GitSignsChangeInline' then
+        if details and details.hl_group == 'JjSignsChangeInline' then
           return mark[3], details.end_col
         end
       end
@@ -227,25 +227,24 @@ describe('inline preview', function()
         'charlie',
       },
     })
-    setup_gitsigns(test_config)
+    setup_jjsigns(test_config)
     edit(test_file)
 
     helpers.api.nvim_buf_set_lines(0, 0, 2, false, {})
 
     expectf(function()
       local hunk = exec_lua(function()
-        return require('gitsigns').get_hunks()[1]
+        return require('jjsigns').get_hunks()[1]
       end)
       assert(hunk and hunk.removed.count == 2)
     end)
 
     local wins_before, wins_after, virt_line_count, leftcol = exec_lua(function()
       local wins0 = #vim.api.nvim_list_wins()
-      local markid = require('gitsigns.async')
-        .run(require('gitsigns.actions.preview').preview_hunk_inline)
-        :wait()
+      local markid =
+        require('jjsigns.async').run(require('jjsigns.actions.preview').preview_hunk_inline):wait()
       assert(markid, 'preview mark not found')
-      local ns = vim.api.nvim_get_namespaces().gitsigns_preview_inline
+      local ns = vim.api.nvim_get_namespaces().jjsigns_preview_inline
       local marks = vim.api.nvim_buf_get_extmarks(0, ns, 0, -1, { details = true })
       local details --- @type vim.api.keyset.get_extmark_item[4]?
       for _, mark in ipairs(marks) do
@@ -270,7 +269,7 @@ describe('inline preview', function()
         'bravo',
       },
     })
-    setup_gitsigns(test_config)
+    setup_jjsigns(test_config)
     edit(test_file)
 
     exec_lua(function()
@@ -280,19 +279,18 @@ describe('inline preview', function()
 
     expectf(function()
       local hunk = exec_lua(function()
-        return require('gitsigns').get_hunks()[1]
+        return require('jjsigns').get_hunks()[1]
       end)
       assert(hunk and hunk.type == 'delete' and hunk.added.start == 0)
     end)
 
     local wins_before, wins_after, virt_line_count, leftcol, top_row = exec_lua(function()
       local wins0 = #vim.api.nvim_list_wins()
-      local markid = require('gitsigns.async')
-        .run(require('gitsigns.actions.preview').preview_hunk_inline)
-        :wait()
+      local markid =
+        require('jjsigns.async').run(require('jjsigns.actions.preview').preview_hunk_inline):wait()
       assert(markid, 'preview mark not found')
 
-      local ns = vim.api.nvim_get_namespaces().gitsigns_preview_inline
+      local ns = vim.api.nvim_get_namespaces().jjsigns_preview_inline
       local marks = vim.api.nvim_buf_get_extmarks(0, ns, 0, -1, { details = true })
       local details --- @type vim.api.keyset.get_extmark_item[4]?
       for _, mark in ipairs(marks) do
@@ -344,7 +342,7 @@ describe('inline preview', function()
     })
     local config = vim.deepcopy(test_config)
     config.word_diff = true
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     edit(test_file)
 
     exec_lua(function()
@@ -359,18 +357,17 @@ describe('inline preview', function()
 
     expectf(function()
       local hunk = exec_lua(function()
-        return require('gitsigns').get_hunks()[1]
+        return require('jjsigns').get_hunks()[1]
       end)
       assert(hunk and hunk.removed.count == 1)
     end)
 
     local rendered = exec_lua(function()
-      local markid = require('gitsigns.async')
-        .run(require('gitsigns.actions.preview').preview_hunk_inline)
-        :wait()
+      local markid =
+        require('jjsigns.async').run(require('jjsigns.actions.preview').preview_hunk_inline):wait()
       assert(markid)
 
-      local ns = vim.api.nvim_get_namespaces().gitsigns_preview_inline
+      local ns = vim.api.nvim_get_namespaces().jjsigns_preview_inline
       local marks = vim.api.nvim_buf_get_extmarks(0, ns, 0, -1, { details = true })
       for _, mark in ipairs(marks) do
         if mark[1] == markid then
@@ -397,7 +394,7 @@ describe('inline preview', function()
         'local foo = 1',
       },
     })
-    setup_gitsigns(test_config)
+    setup_jjsigns(test_config)
     edit(test_file)
     enable_lua_treesitter_on_filetype()
 
@@ -408,23 +405,23 @@ describe('inline preview', function()
 
     expectf(function()
       local hunk = exec_lua(function()
-        return require('gitsigns').get_hunks()[1]
+        return require('jjsigns').get_hunks()[1]
       end)
       assert(hunk and hunk.removed.count == 1 and hunk.added.count == 1)
     end)
 
     local expected_keyword, expected_diff, virt_line, diff_col = exec_lua(function()
-      local Inspect = require('gitsigns.inspect')
+      local Inspect = require('jjsigns.inspect')
 
       local removed = { 'unchanged', 'local foo = 1' }
       local added = { 'unchanged', 'local bar = 1' }
-      local removed_regions = require('gitsigns.diff_int').run_word_diff(
+      local removed_regions = require('jjsigns.diff_int').run_word_diff(
         { removed[2] },
         { added[2] }
       )
       local diff_col = removed_regions[1][3] - 1
 
-      local ns = vim.api.nvim_create_namespace('gitsigns_test_preview')
+      local ns = vim.api.nvim_create_namespace('jjsigns_test_preview')
       local preview_buf = vim.api.nvim_create_buf(false, true)
       vim.api.nvim_buf_set_lines(preview_buf, 0, -1, false, removed)
       vim.bo[preview_buf].filetype = vim.bo.filetype
@@ -437,13 +434,13 @@ describe('inline preview', function()
       pcall(parser.parse, parser, true)
 
       vim.api.nvim_buf_set_extmark(preview_buf, ns, 1, 0, {
-        hl_group = 'GitSignsDeleteVirtLn',
+        hl_group = 'JjSignsDeleteVirtLn',
         hl_eol = true,
         end_row = 2,
         priority = 1000,
       })
       vim.api.nvim_buf_set_extmark(preview_buf, ns, 1, diff_col, {
-        hl_group = 'GitSignsDeleteVirtLnInLine',
+        hl_group = 'JjSignsDeleteVirtLnInLine',
         end_col = removed_regions[1][4] - 1,
         end_row = 1,
         priority = 1001,
@@ -453,14 +450,13 @@ describe('inline preview', function()
       local expected_keyword0 = Inspect.hl_stack_at(inspected, 0)
       local expected_diff0 = Inspect.hl_stack_at(inspected, diff_col)
 
-      local markid = require('gitsigns.async')
-        .run(require('gitsigns.actions.preview').preview_hunk_inline)
-        :wait()
+      local markid =
+        require('jjsigns.async').run(require('jjsigns.actions.preview').preview_hunk_inline):wait()
       assert(markid)
 
-      local ns_preview_inline = vim.api.nvim_get_namespaces().gitsigns_preview_inline
+      local ns_preview_inline = vim.api.nvim_get_namespaces().jjsigns_preview_inline
       local marks = vim.api.nvim_buf_get_extmarks(0, ns_preview_inline, 0, -1, { details = true })
-      local virt_lines --- @type Gitsigns.VirtTextChunk[][]?
+      local virt_lines --- @type Jjsigns.VirtTextChunk[][]?
       for _, mark in ipairs(marks) do
         if mark[1] == markid then
           virt_lines = assert(mark[4]).virt_lines
@@ -493,7 +489,7 @@ describe('inline preview', function()
     })
     local config = vim.deepcopy(test_config)
     config.word_diff = true
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     edit(test_file)
 
     exec_lua(function()
@@ -504,9 +500,7 @@ describe('inline preview', function()
 
     expectf(function()
       local deleted_row, changed_row = exec_lua(function()
-        require('gitsigns.async')
-          .run(require('gitsigns.actions.preview').preview_hunk_inline)
-          :wait()
+        require('jjsigns.async').run(require('jjsigns.actions.preview').preview_hunk_inline):wait()
         vim.cmd('redraw!')
 
         local function screenline(row, width)
@@ -547,7 +541,7 @@ describe('inline preview', function()
     })
     local config = vim.deepcopy(test_config)
     config.word_diff = true
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     edit(test_file)
 
     exec_lua(function()
@@ -572,11 +566,11 @@ describe('inline preview', function()
           local wins = vim.api.nvim_tabpage_list_wins(0)
           local left_win, right_win = wins[1], wins[2]
           local bufnr = vim.api.nvim_get_current_buf()
-          local ns = vim.api.nvim_get_namespaces().gitsigns_preview_inline
-          local preview = require('gitsigns.actions.preview')
+          local ns = vim.api.nvim_get_namespaces().jjsigns_preview_inline
+          local preview = require('jjsigns.actions.preview')
 
           vim.api.nvim_set_current_win(left_win)
-          require('gitsigns.async').run(preview.preview_hunk_inline):wait()
+          require('jjsigns.async').run(preview.preview_hunk_inline):wait()
 
           local preview_marks0 = 0
           for _, mark in ipairs(vim.api.nvim_buf_get_extmarks(bufnr, ns, 0, -1, { details = true })) do
@@ -626,7 +620,7 @@ describe('popup preview', function()
     })
     local config = vim.deepcopy(test_config)
     config.word_diff = true
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     edit(test_file)
     enable_lua_treesitter_on_filetype()
 
@@ -637,18 +631,18 @@ describe('popup preview', function()
 
     expectf(function()
       local hunk = exec_lua(function()
-        return require('gitsigns').get_hunks()[1]
+        return require('jjsigns').get_hunks()[1]
       end)
       assert(hunk and hunk.removed.count == 1 and hunk.added.count == 1)
     end)
 
     local expected_keyword_priority, actual_keyword_priority, line_priority, diff_priority = exec_lua(
       function()
-        require('gitsigns.popup').close('hunk')
-        require('gitsigns').preview_hunk()
-        local popup_win = assert(require('gitsigns.popup').is_open('hunk'))
+        require('jjsigns.popup').close('hunk')
+        require('jjsigns').preview_hunk()
+        local popup_win = assert(require('jjsigns.popup').is_open('hunk'))
         local popup_buf = vim.api.nvim_win_get_buf(popup_win)
-        local ns = vim.api.nvim_get_namespaces().gitsigns_popup
+        local ns = vim.api.nvim_get_namespaces().jjsigns_popup
         local marks = vim.api.nvim_buf_get_extmarks(popup_buf, ns, 0, -1, { details = true })
 
         local function mark_contains_hl(hl, group)
@@ -674,9 +668,9 @@ describe('popup preview', function()
             and end_col > 1
           then
             keyword_priority = details.priority
-          elseif details.hl_group == 'GitSignsDeletePreview' then
+          elseif details.hl_group == 'JjSignsDeletePreview' then
             line_priority0 = details.priority
-          elseif details.hl_group == 'GitSignsDeleteInline' then
+          elseif details.hl_group == 'JjSignsDeleteInline' then
             diff_priority0 = details.priority
           end
 
@@ -707,7 +701,7 @@ describe('popup preview', function()
         'local foo = 1',
       },
     })
-    setup_gitsigns(test_config)
+    setup_jjsigns(test_config)
     edit(test_file)
     enable_lua_treesitter_on_filetype()
 
@@ -724,7 +718,7 @@ describe('popup preview', function()
     local result
     expectf(function()
       result = exec_lua(function()
-        local Inspect = require('gitsigns.inspect')
+        local Inspect = require('jjsigns.inspect')
 
         local function expected_line_hls(line, line_hl, inline_hl, region)
           local preview_buf = vim.api.nvim_create_buf(false, true)
@@ -738,7 +732,7 @@ describe('popup preview', function()
           assert(ok and parser)
           pcall(parser.parse, parser, true)
 
-          local ns_preview = vim.api.nvim_create_namespace('gitsigns_test_popup_preview_expected')
+          local ns_preview = vim.api.nvim_create_namespace('jjsigns_test_popup_preview_expected')
           vim.api.nvim_buf_set_extmark(preview_buf, ns_preview, 0, 0, {
             hl_group = line_hl,
             hl_eol = true,
@@ -764,7 +758,7 @@ describe('popup preview', function()
 
         local removed_line = 'local foo = 1'
         local added_line = 'local bar = 1'
-        local removed_regions, added_regions = require('gitsigns.diff_int').run_word_diff(
+        local removed_regions, added_regions = require('jjsigns.diff_int').run_word_diff(
           { removed_line },
           { added_line }
         )
@@ -772,22 +766,22 @@ describe('popup preview', function()
         local expected_deleted_keyword0, expected_deleted_diff0, deleted_diff_col =
           expected_line_hls(
             removed_line,
-            'GitSignsDeletePreview',
-            'GitSignsDeleteInline',
+            'JjSignsDeletePreview',
+            'JjSignsDeleteInline',
             removed_regions[1]
           )
         local expected_added_keyword0, expected_added_diff0, added_diff_col = expected_line_hls(
           added_line,
-          'GitSignsAddPreview',
-          added_regions[1][2] == 'add' and 'GitSignsAddInline'
-            or added_regions[1][2] == 'change' and 'GitSignsChangeInline'
-            or 'GitSignsDeleteInline',
+          'JjSignsAddPreview',
+          added_regions[1][2] == 'add' and 'JjSignsAddInline'
+            or added_regions[1][2] == 'change' and 'JjSignsChangeInline'
+            or 'JjSignsDeleteInline',
           added_regions[1]
         )
 
-        require('gitsigns.popup').close('hunk')
-        require('gitsigns').preview_hunk()
-        local popup_win = require('gitsigns.popup').is_open('hunk')
+        require('jjsigns.popup').close('hunk')
+        require('jjsigns').preview_hunk()
+        local popup_win = require('jjsigns.popup').is_open('hunk')
         if not popup_win then
           return
         end
@@ -837,7 +831,7 @@ describe('popup preview', function()
         'local foo = 1',
       },
     })
-    setup_gitsigns(test_config)
+    setup_jjsigns(test_config)
     edit(test_file)
 
     exec_lua(function()
@@ -847,11 +841,11 @@ describe('popup preview', function()
 
     expectf(function()
       local deleted_eol, added_eol = exec_lua(function()
-        require('gitsigns.popup').close('hunk')
-        require('gitsigns').preview_hunk()
-        local popup_win = assert(require('gitsigns.popup').is_open('hunk'))
+        require('jjsigns.popup').close('hunk')
+        require('jjsigns').preview_hunk()
+        local popup_win = assert(require('jjsigns.popup').is_open('hunk'))
         local popup_buf = vim.api.nvim_win_get_buf(popup_win)
-        local ns = assert(vim.api.nvim_get_namespaces().gitsigns_popup)
+        local ns = assert(vim.api.nvim_get_namespaces().jjsigns_popup)
         local marks = vim.api.nvim_buf_get_extmarks(popup_buf, ns, 0, -1, { details = true })
         vim.api.nvim_win_close(popup_win, true)
 
@@ -861,7 +855,7 @@ describe('popup preview', function()
           local col = mark[3]
           local details = assert(mark[4])
           if
-            details.hl_group == 'GitSignsDeletePreview'
+            details.hl_group == 'JjSignsDeletePreview'
             and row == 1
             and col == 0
             and details.end_row == 2
@@ -869,7 +863,7 @@ describe('popup preview', function()
           then
             deleted_eol0 = true
           elseif
-            details.hl_group == 'GitSignsAddPreview'
+            details.hl_group == 'JjSignsAddPreview'
             and row == 2
             and col == 0
             and details.end_row == 3
@@ -896,13 +890,13 @@ describe('popup preview', function()
         'local foo = 1',
       },
     })
-    setup_gitsigns(test_config)
+    setup_jjsigns(test_config)
     edit(test_file)
 
     exec_lua(function()
-      local ns = vim.api.nvim_create_namespace('gitsigns_test_popup_repeat')
+      local ns = vim.api.nvim_create_namespace('jjsigns_test_popup_repeat')
       vim.api.nvim_create_autocmd('FileType', {
-        group = vim.api.nvim_create_augroup('gitsigns_test_popup_repeat', { clear = true }),
+        group = vim.api.nvim_create_augroup('jjsigns_test_popup_repeat', { clear = true }),
         pattern = 'lua',
         callback = function(args)
           vim.schedule(function()
@@ -927,18 +921,18 @@ describe('popup preview', function()
 
     expectf(function()
       local hunk = exec_lua(function()
-        return require('gitsigns').get_hunks()[1]
+        return require('jjsigns').get_hunks()[1]
       end)
       assert(hunk and hunk.removed.count == 1 and hunk.added.count == 1)
     end)
 
     local first_deleted, second_deleted, first_added, second_added = exec_lua(function()
-      local Inspect = require('gitsigns.inspect')
+      local Inspect = require('jjsigns.inspect')
 
       local function popup_stacks()
-        require('gitsigns.popup').close('hunk')
-        require('gitsigns').preview_hunk()
-        local popup_win = assert(require('gitsigns.popup').is_open('hunk'))
+        require('jjsigns.popup').close('hunk')
+        require('jjsigns').preview_hunk()
+        local popup_win = assert(require('jjsigns.popup').is_open('hunk'))
         local popup_buf = vim.api.nvim_win_get_buf(popup_win)
         local deleted = Inspect.inspect_range(popup_buf, 1, 0, #'-local foo = 1')
         local added = Inspect.inspect_range(popup_buf, 2, 0, #'+local bar = 1')
@@ -951,13 +945,13 @@ describe('popup preview', function()
       return first_deleted0, second_deleted0, first_added0, second_added0
     end)
 
-    assert(contains_hl(first_deleted, 'GitSignsDeletePreview'))
+    assert(contains_hl(first_deleted, 'JjSignsDeletePreview'))
     assert(contains_hl(first_deleted, 'ErrorMsg'))
-    assert(contains_hl(second_deleted, 'GitSignsDeletePreview'))
+    assert(contains_hl(second_deleted, 'JjSignsDeletePreview'))
     assert(contains_hl(second_deleted, 'ErrorMsg'))
-    assert(contains_hl(first_added, 'GitSignsAddPreview'))
+    assert(contains_hl(first_added, 'JjSignsAddPreview'))
     assert(contains_hl(first_added, 'ErrorMsg'))
-    assert(contains_hl(second_added, 'GitSignsAddPreview'))
+    assert(contains_hl(second_added, 'JjSignsAddPreview'))
     assert(contains_hl(second_added, 'ErrorMsg'))
     eq(first_deleted, second_deleted)
     eq(first_added, second_added)
@@ -974,13 +968,13 @@ describe('popup preview', function()
     })
     local config = vim.deepcopy(test_config)
     config.word_diff = true
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     edit(test_file)
 
     exec_lua(function()
-      local ns = vim.api.nvim_create_namespace('gitsigns_test_popup_prefix')
+      local ns = vim.api.nvim_create_namespace('jjsigns_test_popup_prefix')
       vim.api.nvim_create_autocmd('FileType', {
-        group = vim.api.nvim_create_augroup('gitsigns_test_popup_prefix', { clear = true }),
+        group = vim.api.nvim_create_augroup('jjsigns_test_popup_prefix', { clear = true }),
         pattern = 'lua',
         callback = function(args)
           vim.api.nvim_buf_set_extmark(args.buf, ns, 1, 0, {
@@ -999,17 +993,17 @@ describe('popup preview', function()
 
     expectf(function()
       local hunk = exec_lua(function()
-        return require('gitsigns').get_hunks()[1]
+        return require('jjsigns').get_hunks()[1]
       end)
       assert(hunk and hunk.removed.count == 1 and hunk.added.count == 1)
     end)
 
     local prefix_stack, text_stack = exec_lua(function()
-      local Inspect = require('gitsigns.inspect')
+      local Inspect = require('jjsigns.inspect')
 
-      require('gitsigns.popup').close('hunk')
-      require('gitsigns').preview_hunk()
-      local popup_win = assert(require('gitsigns.popup').is_open('hunk'))
+      require('jjsigns.popup').close('hunk')
+      require('jjsigns').preview_hunk()
+      local popup_win = assert(require('jjsigns.popup').is_open('hunk'))
       local popup_buf = vim.api.nvim_win_get_buf(popup_win)
       local deleted = Inspect.inspect_range(popup_buf, 1, 0, #'--- foo')
       vim.api.nvim_win_close(popup_win, true)
@@ -1017,7 +1011,7 @@ describe('popup preview', function()
       return Inspect.hl_stack_at(deleted, 0), Inspect.hl_stack_at(deleted, 1)
     end)
 
-    assert(contains_hl(prefix_stack, 'GitSignsDeletePreview'))
+    assert(contains_hl(prefix_stack, 'JjSignsDeletePreview'))
     assert(not contains_hl(prefix_stack, 'ErrorMsg'))
     assert(contains_hl(text_stack, 'ErrorMsg'))
   end)
@@ -1031,7 +1025,7 @@ describe('popup preview', function()
         'd',
       },
     })
-    setup_gitsigns(test_config)
+    setup_jjsigns(test_config)
     edit(test_file)
 
     exec_lua(function()
@@ -1040,12 +1034,12 @@ describe('popup preview', function()
     end)
     git('add', test_file)
     exec_lua(function()
-      require('gitsigns').refresh()
+      require('jjsigns').refresh()
     end)
 
     expectf(function()
       local staged = exec_lua(function()
-        local cache = require('gitsigns.cache').cache[vim.api.nvim_get_current_buf()]
+        local cache = require('jjsigns.cache').cache[vim.api.nvim_get_current_buf()]
         return cache and cache.hunks_staged and #cache.hunks_staged or 0
       end)
       eq(1, staged)
@@ -1058,9 +1052,9 @@ describe('popup preview', function()
 
     expectf(function()
       local title, lines = exec_lua(function()
-        require('gitsigns.popup').close('hunk')
-        require('gitsigns').preview_hunk()
-        local popup_win = assert(require('gitsigns.popup').is_open('hunk'))
+        require('jjsigns.popup').close('hunk')
+        require('jjsigns').preview_hunk()
+        local popup_win = assert(require('jjsigns.popup').is_open('hunk'))
         local popup_buf = vim.api.nvim_win_get_buf(popup_win)
         local title0 = assert(vim.api.nvim_buf_get_lines(popup_buf, 0, 1, false)[1])
         local lines0 = vim.api.nvim_buf_get_lines(popup_buf, 1, 3, false)
@@ -1082,7 +1076,7 @@ describe('popup preview', function()
         'delta',
       },
     })
-    setup_gitsigns(test_config)
+    setup_jjsigns(test_config)
     edit(test_file)
 
     exec_lua(function()
@@ -1091,12 +1085,12 @@ describe('popup preview', function()
     end)
     git('add', test_file)
     exec_lua(function()
-      require('gitsigns').refresh()
+      require('jjsigns').refresh()
     end)
 
     expectf(function()
       local unstaged, staged = exec_lua(function()
-        local cache = require('gitsigns.cache').cache[vim.api.nvim_get_current_buf()]
+        local cache = require('jjsigns.cache').cache[vim.api.nvim_get_current_buf()]
         return cache and #cache.hunks or 0,
           cache and cache.hunks_staged and #cache.hunks_staged or 0
       end)
@@ -1111,11 +1105,11 @@ describe('popup preview', function()
 
     expectf(function()
       local unstaged, staged, title = exec_lua(function()
-        local cache = require('gitsigns.cache').cache[vim.api.nvim_get_current_buf()]
+        local cache = require('jjsigns.cache').cache[vim.api.nvim_get_current_buf()]
 
-        require('gitsigns.popup').close('hunk')
-        require('gitsigns').preview_hunk()
-        local popup_win = assert(require('gitsigns.popup').is_open('hunk'))
+        require('jjsigns.popup').close('hunk')
+        require('jjsigns').preview_hunk()
+        local popup_win = assert(require('jjsigns.popup').is_open('hunk'))
         local popup_buf = vim.api.nvim_win_get_buf(popup_win)
         local line = assert(vim.api.nvim_buf_get_lines(popup_buf, 0, 1, false)[1])
         vim.api.nvim_win_close(popup_win, true)
@@ -1143,7 +1137,7 @@ describe('popup preview', function()
     local config = vim.deepcopy(test_config)
     config.word_diff = false
     config.diff_opts = { linematch = 60 }
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     edit(test_file)
 
     exec_lua(function()
@@ -1158,8 +1152,8 @@ describe('popup preview', function()
 
     expectf(function()
       local regular_count, greedy_count = exec_lua(function()
-        local async = require('gitsigns.async')
-        local bcache = require('gitsigns.cache').cache[vim.api.nvim_get_current_buf()]
+        local async = require('jjsigns.async')
+        local bcache = require('jjsigns.cache').cache[vim.api.nvim_get_current_buf()]
         local regular, greedy
 
         async
@@ -1177,9 +1171,9 @@ describe('popup preview', function()
     end)
 
     local lines = exec_lua(function()
-      require('gitsigns.popup').close('hunk')
-      require('gitsigns').preview_hunk()
-      local popup_win = assert(require('gitsigns.popup').is_open('hunk'))
+      require('jjsigns.popup').close('hunk')
+      require('jjsigns').preview_hunk()
+      local popup_win = assert(require('jjsigns.popup').is_open('hunk'))
       local popup_buf = vim.api.nvim_win_get_buf(popup_win)
       local lines0 = vim.api.nvim_buf_get_lines(popup_buf, 0, -1, false)
       vim.api.nvim_win_close(popup_win, true)
@@ -1219,7 +1213,7 @@ describe('show_deleted', function()
     local config = vim.deepcopy(test_config)
     config.show_deleted = true
     config.word_diff = true
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     edit(test_file)
     exec_lua(function()
       vim.api.nvim_buf_set_lines(0, 1, 2, false, { 'local bar = 1' })
@@ -1227,15 +1221,15 @@ describe('show_deleted', function()
 
     expectf(function()
       local hunk = exec_lua(function()
-        return require('gitsigns').get_hunks()[1]
+        return require('jjsigns').get_hunks()[1]
       end)
       assert(hunk and hunk.removed.count == 1)
     end)
 
     local calls = exec_lua(function()
       local bufnr = vim.api.nvim_get_current_buf()
-      local DeletedPreview = require('gitsigns.deleted_preview')
-      local HunkPreview = require('gitsigns.hunk_preview')
+      local DeletedPreview = require('jjsigns.deleted_preview')
+      local HunkPreview = require('jjsigns.hunk_preview')
       local orig = HunkPreview.prepare_removed_source
       local count = 0
 
@@ -1266,7 +1260,7 @@ describe('show_deleted', function()
     local config = vim.deepcopy(test_config)
     config.show_deleted = true
     config.word_diff = true
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     edit(test_file)
     exec_lua(function()
       vim.api.nvim_buf_set_lines(0, 1, 2, false, { 'local bar = 1' })
@@ -1276,7 +1270,7 @@ describe('show_deleted', function()
       local clears, scheduled, rendered = exec_lua(function()
         local bufnr = vim.api.nvim_get_current_buf()
         local winid = vim.api.nvim_get_current_win()
-        local DeletedPreview = require('gitsigns.deleted_preview')
+        local DeletedPreview = require('jjsigns.deleted_preview')
         local orig_clear = vim.api.nvim_buf_clear_namespace
         local orig_schedule = vim.schedule
         local clear_calls = 0
@@ -1319,7 +1313,7 @@ describe('show_deleted', function()
     local config = vim.deepcopy(test_config)
     config.show_deleted = true
     config.word_diff = true
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     edit(test_file)
     exec_lua(function()
       vim.api.nvim_buf_set_lines(0, 1, 2, false, { 'local bar = 1' })
@@ -1376,7 +1370,7 @@ describe('show_deleted', function()
     local config = vim.deepcopy(test_config)
     config.show_deleted = true
     config.word_diff = true
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     edit(test_file)
 
     exec_lua(function()
@@ -1387,19 +1381,19 @@ describe('show_deleted', function()
       exec_lua(function()
         vim.cmd('redraw!')
       end)
-      eq(true, deleted_preview_has_hl('GitSignsDeleteVirtLnInLine'))
+      eq(true, deleted_preview_has_hl('JjSignsDeleteVirtLnInLine'))
     end)
 
     exec_lua(function()
-      require('gitsigns').toggle_word_diff(false)
+      require('jjsigns').toggle_word_diff(false)
     end)
 
     expectf(function()
       exec_lua(function()
         vim.cmd('redraw!')
       end)
-      eq(true, deleted_preview_has_hl('GitSignsDeleteVirtLn'))
-      eq(false, deleted_preview_has_hl('GitSignsDeleteVirtLnInLine'))
+      eq(true, deleted_preview_has_hl('JjSignsDeleteVirtLn'))
+      eq(false, deleted_preview_has_hl('JjSignsDeleteVirtLnInLine'))
     end)
   end)
 
@@ -1416,7 +1410,7 @@ describe('show_deleted', function()
     local config = vim.deepcopy(test_config)
     config.show_deleted = true
     config.word_diff = true
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     edit(test_file)
 
     exec_lua(function()
@@ -1461,7 +1455,7 @@ describe('show_deleted', function()
     local config = vim.deepcopy(test_config)
     config.show_deleted = true
     config.word_diff = true
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     edit(test_file)
 
     exec_lua(function()
@@ -1526,7 +1520,7 @@ describe('show_deleted', function()
     local config = vim.deepcopy(test_config)
     config.show_deleted = true
     config.word_diff = true
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     edit(test_file)
 
     exec_lua(function()
@@ -1566,7 +1560,7 @@ describe('show_deleted', function()
     local config = vim.deepcopy(test_config)
     config.show_deleted = true
     config.word_diff = true
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     edit(test_file)
 
     exec_lua(function()
@@ -1591,7 +1585,7 @@ describe('show_deleted', function()
     expectf(function()
       local hunks = exec_lua(function()
         vim.cmd('redraw!')
-        return require('gitsigns').get_hunks()
+        return require('jjsigns').get_hunks()
       end)
 
       eq(0, #hunks)
@@ -1613,13 +1607,13 @@ describe('show_deleted', function()
     local config = vim.deepcopy(test_config)
     config.show_deleted = true
     config.word_diff = true
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     edit(test_file)
 
     exec_lua(function()
-      local ns = vim.api.nvim_create_namespace('gitsigns_test_show_deleted_multi')
+      local ns = vim.api.nvim_create_namespace('jjsigns_test_show_deleted_multi')
       vim.api.nvim_create_autocmd('FileType', {
-        group = vim.api.nvim_create_augroup('gitsigns_test_show_deleted_multi', { clear = true }),
+        group = vim.api.nvim_create_augroup('jjsigns_test_show_deleted_multi', { clear = true }),
         pattern = 'lua',
         callback = function(args)
           vim.api.nvim_buf_set_extmark(args.buf, ns, 1, 0, {
@@ -1649,7 +1643,7 @@ describe('show_deleted', function()
 
     expectf(function()
       local hunks = exec_lua(function()
-        return require('gitsigns').get_hunks()
+        return require('jjsigns').get_hunks()
       end)
       eq(2, #hunks)
     end)
@@ -1671,7 +1665,7 @@ describe('show_deleted', function()
               local chunks = details.virt_lines[1]
               if chunks then
                 for _, chunk in ipairs(chunks) do
-                  if contains_hl0(chunk[2], 'GitSignsDeleteVirtLn') then
+                  if contains_hl0(chunk[2], 'JjSignsDeleteVirtLn') then
                     marks[#marks + 1] = mark
                     break
                   end
@@ -1735,13 +1729,13 @@ describe('hunk preview source buffers', function()
 
   it('clears cached syntax when the source syntax is cleared', function()
     setup_test_repo()
-    setup_gitsigns(test_config)
+    setup_jjsigns(test_config)
     edit(test_file)
 
     expectf(function()
       local before_syntax, after_syntax = exec_lua(function()
-        local HunkPreview = require('gitsigns.hunk_preview')
-        local source_cache = {} --- @type table<string, Gitsigns.HunkPreview.SourceBuf>
+        local HunkPreview = require('jjsigns.hunk_preview')
+        local source_cache = {} --- @type table<string, Jjsigns.HunkPreview.SourceBuf>
         local bufnr = vim.api.nvim_get_current_buf()
 
         vim.bo[0].syntax = 'lua'
@@ -1767,18 +1761,18 @@ describe('hunk preview source buffers', function()
 
   it('recreates cached source buffers when the source text changes', function()
     setup_test_repo()
-    setup_gitsigns(test_config)
+    setup_jjsigns(test_config)
     edit(test_file)
 
     expectf(function()
       local first_valid, second_valid, same_buf, stale_marks = exec_lua(function()
-        local HunkPreview = require('gitsigns.hunk_preview')
-        local bcache = require('gitsigns.cache').cache[vim.api.nvim_get_current_buf()]
+        local HunkPreview = require('jjsigns.hunk_preview')
+        local bcache = require('jjsigns.cache').cache[vim.api.nvim_get_current_buf()]
         assert(bcache and bcache.compare_text)
 
-        local source_cache = {} --- @type table<string, Gitsigns.HunkPreview.SourceBuf>
+        local source_cache = {} --- @type table<string, Jjsigns.HunkPreview.SourceBuf>
         local bufnr = vim.api.nvim_get_current_buf()
-        local ns = vim.api.nvim_create_namespace('gitsigns_test_source_cache')
+        local ns = vim.api.nvim_create_namespace('jjsigns_test_source_cache')
 
         local _, cleanup = HunkPreview.prepare_removed_source(bufnr, false, source_cache)
         cleanup()

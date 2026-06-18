@@ -3,13 +3,13 @@ local helpers = require('test.gs_helpers')
 local check = helpers.check
 local clear = helpers.clear
 local command = helpers.api.nvim_command
-local command_wait_gitsigns_update = helpers.command_wait_gitsigns_update
+local command_wait_jjsigns_update = helpers.command_wait_jjsigns_update
 local edit = helpers.edit
 local eq = helpers.eq
 local exec_lua = helpers.exec_lua
 local feed = helpers.feed
 local matches = helpers.matches
-local setup_gitsigns = helpers.setup_gitsigns
+local setup_jjsigns = helpers.setup_jjsigns
 local setup_jj_repo = helpers.setup_jj_repo
 local test_config = helpers.test_config
 local wait_for_attach = helpers.wait_for_attach
@@ -32,7 +32,7 @@ end
 --- @return boolean
 local function supports_staging()
   return exec_lua(function()
-    local cache = require('gitsigns.cache').cache
+    local cache = require('jjsigns.cache').cache
     local bcache = cache[vim.api.nvim_get_current_buf()]
     return bcache.git_obj:supports_staging()
   end)
@@ -40,7 +40,7 @@ end
 
 --- @return string
 local function buf_head()
-  return exec_lua('return vim.b.gitsigns_status_dict.head')
+  return exec_lua('return vim.b.jjsigns_status_dict.head')
 end
 
 describe('jj', function()
@@ -55,7 +55,7 @@ describe('jj', function()
     if skip_without_jj() then
       return
     end
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     setup_jj_repo()
     edit(test_file)
     wait_for_attach()
@@ -66,7 +66,7 @@ describe('jj', function()
     eq(
       'jj',
       exec_lua(function()
-        local cache = require('gitsigns.cache').cache
+        local cache = require('jjsigns.cache').cache
         return cache[vim.api.nvim_get_current_buf()].git_obj.repo.vcs
       end)
     )
@@ -81,7 +81,7 @@ describe('jj', function()
     if skip_without_jj() then
       return
     end
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     setup_jj_repo()
     edit(test_file)
     wait_for_attach()
@@ -97,7 +97,7 @@ describe('jj', function()
     if skip_without_jj() then
       return
     end
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     setup_jj_repo()
     edit(test_file)
     wait_for_attach()
@@ -109,15 +109,15 @@ describe('jj', function()
 
     -- Staging is refused and must be a no-op: the hunk (and its sign) remain.
     -- (In a git repo this would clear the sign.)
-    command('Gitsigns stage_hunk')
-    command('Gitsigns stage_buffer')
+    command('Jjsigns stage_hunk')
+    command('Jjsigns stage_buffer')
     check({ signs = { changed = 1 } })
 
     -- Staging actions are not advertised for jj buffers.
     eq(
       false,
       exec_lua(function()
-        local actions = require('gitsigns').get_actions() or {}
+        local actions = require('jjsigns').get_actions() or {}
         return actions.stage_hunk ~= nil
       end)
     )
@@ -127,7 +127,7 @@ describe('jj', function()
     if skip_without_jj() then
       return
     end
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     setup_jj_repo()
     edit(test_file)
     wait_for_attach()
@@ -135,7 +135,7 @@ describe('jj', function()
     feed('jjjccEDIT<esc>')
     check({ signs = { changed = 1 } })
 
-    command_wait_gitsigns_update('Gitsigns reset_hunk')
+    command_wait_jjsigns_update('Jjsigns reset_hunk')
     check({ signs = {} })
   end)
 
@@ -144,7 +144,7 @@ describe('jj', function()
       return
     end
     config.watch_gitdir.enable = true
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     setup_jj_repo()
     edit(test_file)
     wait_for_attach()
@@ -163,7 +163,7 @@ end)
 --- @return string
 local function buf_gitdir()
   return exec_lua(function()
-    local cache = require('gitsigns.cache').cache
+    local cache = require('jjsigns.cache').cache
     return cache[vim.api.nvim_get_current_buf()].git_obj.repo.gitdir
   end)
 end
@@ -171,13 +171,13 @@ end
 --- @return string
 local function buf_vcs()
   return exec_lua(function()
-    local cache = require('gitsigns.cache').cache
+    local cache = require('jjsigns.cache').cache
     return cache[vim.api.nvim_get_current_buf()].git_obj.repo.vcs
   end)
 end
 
 -- A non-colocated jj workspace has no `.git`, so git is genuinely unavailable
--- and gitsigns must use the native jj backend for everything.
+-- and jjsigns must use the native jj backend for everything.
 describe('jj (non-colocated, no git)', function()
   before_each(function()
     clear()
@@ -190,7 +190,7 @@ describe('jj (non-colocated, no git)', function()
     if skip_without_jj() then
       return
     end
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     setup_jj_repo({ colocate = false })
 
     -- Sanity: there really is no usable git repository here.
@@ -212,7 +212,7 @@ describe('jj (non-colocated, no git)', function()
     if skip_without_jj() then
       return
     end
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     setup_jj_repo({ colocate = false })
 
     -- A brand new file: not present in `@-`.
@@ -224,13 +224,13 @@ describe('jj (non-colocated, no git)', function()
     eq(
       true,
       exec_lua(function()
-        local cache = require('gitsigns.cache').cache
+        local cache = require('jjsigns.cache').cache
         return cache[vim.api.nvim_get_current_buf()].git_obj.object_name == nil
       end)
     )
 
     local added = exec_lua(function()
-      local hunks = require('gitsigns').get_hunks() or {}
+      local hunks = require('jjsigns').get_hunks() or {}
       local total = 0
       for _, h in ipairs(hunks) do
         total = total + (h.added and h.added.count or 0)
@@ -244,7 +244,7 @@ describe('jj (non-colocated, no git)', function()
     if skip_without_jj() then
       return
     end
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     setup_jj_repo({ colocate = false })
     edit(test_file)
     wait_for_attach()
@@ -254,8 +254,8 @@ describe('jj (non-colocated, no git)', function()
 
     eq(false, supports_staging())
 
-    command('Gitsigns stage_hunk')
-    command('Gitsigns stage_buffer')
+    command('Jjsigns stage_hunk')
+    command('Jjsigns stage_buffer')
     check({ signs = { changed = 1 } })
   end)
 
@@ -263,14 +263,14 @@ describe('jj (non-colocated, no git)', function()
     if skip_without_jj() then
       return
     end
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     setup_jj_repo({ colocate = false })
     edit(test_file)
     wait_for_attach()
 
     local author = exec_lua(function()
-      local async = require('gitsigns.async')
-      local cache = require('gitsigns.cache').cache
+      local async = require('jjsigns.async')
+      local cache = require('jjsigns.cache').cache
       local bcache = cache[vim.api.nvim_get_current_buf()]
       return async
         .run(function()
@@ -287,7 +287,7 @@ describe('jj (non-colocated, no git)', function()
     if skip_without_jj() then
       return
     end
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     setup_jj_repo({ colocate = false })
     edit(test_file)
     wait_for_attach()
@@ -302,7 +302,7 @@ describe('jj (non-colocated, no git)', function()
       return
     end
     config.watch_gitdir.enable = true
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     setup_jj_repo({ colocate = false })
     edit(test_file)
     wait_for_attach()
@@ -319,7 +319,7 @@ describe('jj (non-colocated, no git)', function()
     if skip_without_jj() then
       return
     end
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     setup_jj_repo({ colocate = false })
 
     -- Commit a file whose name contains a space into `@-`.
@@ -338,8 +338,8 @@ describe('jj (non-colocated, no git)', function()
 
     -- Blame (via `jj file annotate`, which takes a plain path) also resolves it.
     local author = exec_lua(function()
-      local async = require('gitsigns.async')
-      local cache = require('gitsigns.cache').cache
+      local async = require('jjsigns.async')
+      local cache = require('jjsigns.cache').cache
       local bcache = cache[vim.api.nvim_get_current_buf()]
       return async
         .run(function()
@@ -355,7 +355,7 @@ describe('jj (non-colocated, no git)', function()
     if skip_without_jj() then
       return
     end
-    setup_gitsigns(config)
+    setup_jjsigns(config)
     setup_jj_repo({ colocate = false })
     edit(test_file)
     wait_for_attach()
@@ -363,8 +363,8 @@ describe('jj (non-colocated, no git)', function()
     -- `git show` is unavailable in the native backend; show_commit must warn and
     -- return rather than erroring.
     local ok = exec_lua(function()
-      local async = require('gitsigns.async')
-      local show_commit = require('gitsigns.actions.show_commit')
+      local async = require('jjsigns.async')
+      local show_commit = require('jjsigns.actions.show_commit')
       return async
         .run(function()
           show_commit('@-', 'vsplit', vim.api.nvim_get_current_buf())

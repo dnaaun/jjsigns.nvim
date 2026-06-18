@@ -18,7 +18,7 @@ package.path = table.concat({
 local emydoc = require('gen_emydoc') --- @type GenEmmyDoc
 local strip_optional = emydoc.strip_optional
 
-local config = require('gitsigns.config')
+local config = require('jjsigns.config')
 
 local INDENT = 4
 local INDENT_STR = string.rep(' ', INDENT)
@@ -29,7 +29,7 @@ local INDENT_STR = string.rep(' ', INDENT)
 -- in the order they are defined.
 --- @return string[]
 local function get_ordered_schema_keys()
-  local ci = io.lines(root .. '/lua/gitsigns/config.lua') --- @type Iterator[string]
+  local ci = io.lines(root .. '/lua/jjsigns/config.lua') --- @type Iterator[string]
 
   for l in ci do
     if startswith(l, 'M.schema = {') then
@@ -84,13 +84,13 @@ local function gen_config_doc_deprecated(dep_info, out)
       local opts_key, field = dep_info.new_field:match('(.*)%.(.*)')
       if opts_key and field then
         out(
-          (INDENT_STR .. 'Please instead use the field `%s` in |gitsigns-config-%s|.'):format(
+          (INDENT_STR .. 'Please instead use the field `%s` in |jjsigns-config-%s|.'):format(
             field,
             opts_key
           )
         )
       else
-        out((INDENT_STR .. 'Please instead use |gitsigns-config-%s|.'):format(dep_info.new_field))
+        out((INDENT_STR .. 'Please instead use |jjsigns-config-%s|.'):format(dep_info.new_field))
       end
     end
   end
@@ -151,7 +151,7 @@ local function indent_lines(lines, opts)
   return res
 end
 
---- @param v Gitsigns.SchemaElem
+--- @param v Jjsigns.SchemaElem
 --- @return string
 local function vtype(v)
   local ty = v.type_help or v.type
@@ -172,7 +172,7 @@ local function gen_config_doc_field(field, out)
   local v = config.schema[field]
 
   -- Field heading and tag
-  local t = ('*gitsigns-config-%s*'):format(field)
+  local t = ('*jjsigns-config-%s*'):format(field)
   if #field + #t < 80 then
     out(('%-29s %48s'):format(field, t))
   else
@@ -454,7 +454,7 @@ local function wrap_help_line(line, max_width)
   end
 
   -- Don't wrap function tag headers; they rely on column alignment.
-  if line:match('%*gitsigns%.') then
+  if line:match('%*jjsigns%.') then
     return { line }
   end
 
@@ -527,7 +527,7 @@ end
 --- @return string
 local function get_type_tag(name)
   local short = name:gsub('^.-%.', ''):gsub('[^%w]', ''):lower()
-  return 'gitsigns-type-' .. short
+  return 'jjsigns-type-' .. short
 end
 
 --- @param name string
@@ -869,7 +869,7 @@ local function render_fn_block(classes, class_attrs, member)
   end
 
   local sig = ('%s(%s)'):format(member.name, table.concat(args, ', '))
-  local header = ('%-40s%38s'):format(sig, '*gitsigns.' .. member.name .. '()*')
+  local header = ('%-40s%38s'):format(sig, '*jjsigns.' .. member.name .. '()*')
 
   return render_block(header, desc, params, returns, deprecated)
 end
@@ -920,7 +920,7 @@ local function gen_functions_doc()
 
   local out = {} --- @type string[]
 
-  for _, class_name in ipairs({ 'gitsigns.main', 'gitsigns.actions' }) do
+  for _, class_name in ipairs({ 'jjsigns.main', 'jjsigns.actions' }) do
     local class = assert(classes[class_name], 'Class not found')
     for _, member in ipairs(get_class_functions(class)) do
       list_extend(out, render_fn_block(classes, class_attrs, member))
@@ -933,7 +933,7 @@ end
 --- @return string
 local function gen_highlights_doc()
   local res = {} --- @type string[]
-  local highlights = require('gitsigns.highlight')
+  local highlights = require('jjsigns.highlight')
 
   local name_max = 0
   for _, hl in ipairs(highlights.hls) do
@@ -979,7 +979,7 @@ local function get_setup_from_readme()
   end
 
   for l in readme do
-    if l:match("require%('gitsigns'%).setup {") then
+    if l:match("require%('jjsigns'%).setup {") then
       append(l)
       break
     end
@@ -1011,7 +1011,7 @@ end
 local function main()
   local template = io.lines(root .. '/etc/doc_template.txt') --- @type Iterator[string]
 
-  local out = assert(io.open(root .. '/doc/gitsigns.txt', 'w'))
+  local out = assert(io.open(root .. '/doc/jjsigns.txt', 'w'))
 
   for l in template do
     local l1 = l

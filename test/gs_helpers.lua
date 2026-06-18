@@ -143,7 +143,7 @@ reset_scratch()
 M.test_config = {
   debug_mode = true,
   _test_mode = true,
-  _allow_fs_poll_fallback = os.getenv('GITSIGNS_TEST_ALLOW_FS_POLL_FALLBACK') ~= '0',
+  _allow_fs_poll_fallback = os.getenv('JJSIGNS_TEST_ALLOW_FS_POLL_FALLBACK') ~= '0',
   watch_gitdir = {
     enable = false,
     follow_files = true,
@@ -157,12 +157,12 @@ M.test_config = {
     untracked = { text = '#' },
   },
   on_attach = {
-    { 'n', 'mhs', '<cmd>lua require"gitsigns".stage_hunk()<CR>' },
-    { 'n', 'mhu', '<cmd>lua require"gitsigns".undo_stage_hunk()<CR>' },
-    { 'n', 'mhr', '<cmd>lua require"gitsigns".reset_hunk()<CR>' },
-    { 'n', 'mhp', '<cmd>lua require"gitsigns".preview_hunk()<CR>' },
-    { 'n', 'mhS', '<cmd>lua require"gitsigns".stage_buffer()<CR>' },
-    { 'n', 'mhU', '<cmd>lua require"gitsigns".reset_buffer_index()<CR>' },
+    { 'n', 'mhs', '<cmd>lua require"jjsigns".stage_hunk()<CR>' },
+    { 'n', 'mhu', '<cmd>lua require"jjsigns".undo_stage_hunk()<CR>' },
+    { 'n', 'mhr', '<cmd>lua require"jjsigns".reset_hunk()<CR>' },
+    { 'n', 'mhp', '<cmd>lua require"jjsigns".preview_hunk()<CR>' },
+    { 'n', 'mhS', '<cmd>lua require"jjsigns".stage_buffer()<CR>' },
+    { 'n', 'mhU', '<cmd>lua require"jjsigns".reset_buffer_index()<CR>' },
   },
   attach_to_untracked = true,
   update_debounce = 5,
@@ -176,7 +176,7 @@ local test_file_text = {
   'used',
   'for',
   'testing',
-  'gitsigns.',
+  'jjsigns.',
   'The',
   'content',
   "doesn't",
@@ -222,7 +222,7 @@ local function git_in(path, ...)
 end
 
 local function configure_git_repo(path)
-  -- Always force color to test settings don't interfere with gitsigns system
+  -- Always force color to test settings don't interfere with jjsigns system
   -- commands (addresses #23).
   git_in(path, 'config', 'color.branch', 'always')
   git_in(path, 'config', 'color.ui', 'always')
@@ -323,7 +323,7 @@ function M.cleanup()
 
     M.exec_lua(function(root, tmpdir0)
       pcall(function()
-        require('gitsigns').detach_all()
+        require('jjsigns').detach_all()
       end)
       pcall(vim.cmd, 'silent! noautocmd enew!')
       pcall(vim.cmd, 'silent! cd ' .. vim.fn.fnameescape(tmpdir0))
@@ -572,7 +572,7 @@ end
 --- @param range [integer, integer]?
 function M.stage_hunk(range)
   M.exec_lua(function(range0)
-    local async = require('gitsigns.async')
+    local async = require('jjsigns.async')
 
     if range0 == vim.NIL then
       range0 = nil
@@ -581,7 +581,7 @@ function M.stage_hunk(range)
     async
       .run(function()
         local err = async.await(1, function(cb)
-          require('gitsigns').stage_hunk(range0, nil, cb)
+          require('jjsigns').stage_hunk(range0, nil, cb)
         end)
         assert(not err, err)
       end)
@@ -591,10 +591,10 @@ end
 
 function M.reset_buffer_index()
   M.exec_lua(function()
-    local async = require('gitsigns.async')
+    local async = require('jjsigns.async')
     async
       .run(function()
-        local err = async.await(1, require('gitsigns').reset_buffer_index)
+        local err = async.await(1, require('jjsigns').reset_buffer_index)
         assert(not err, err)
       end)
       :wait(5000)
@@ -606,23 +606,23 @@ function M.edit(path)
   helpers.api.nvim_command('edit! ' .. M.fn.fnameescape(path))
 end
 
---- Run a command and wait for the buffer's next GitSignsUpdate event.
+--- Run a command and wait for the buffer's next JjSignsUpdate event.
 --- @param cmd string
 --- @param bufnr? integer
-function M.command_wait_gitsigns_update(cmd, bufnr)
+function M.command_wait_jjsigns_update(cmd, bufnr)
   M.exec_lua(function(cmd0, bufnr0)
-    local async = require('gitsigns.async')
+    local async = require('jjsigns.async')
     local target_bufnr = bufnr0 == vim.NIL and vim.api.nvim_get_current_buf() or bufnr0
 
     async
       .run(function()
         local event = async.event()
-        local group = vim.api.nvim_create_augroup('gitsigns_test_wait_update', { clear = true })
+        local group = vim.api.nvim_create_augroup('jjsigns_test_wait_update', { clear = true })
         local autocmd --- @type integer
 
         autocmd = vim.api.nvim_create_autocmd('User', {
           group = group,
-          pattern = 'GitSignsUpdate',
+          pattern = 'JjSignsUpdate',
           callback = function(args)
             if args.data and args.data.buffer == target_bufnr then
               pcall(vim.api.nvim_del_autocmd, autocmd)
@@ -651,11 +651,11 @@ function M.wait_for_attach(bufnr)
       if bufnr0 == vim.NIL then
         bufnr0 = 0
       end
-      local cache = require('gitsigns.cache').cache[bufnr0]
+      local cache = require('jjsigns.cache').cache[bufnr0]
       return cache ~= nil
         and cache.git_obj ~= nil
         and cache.hunks ~= nil
-        and vim.b[bufnr0].gitsigns_status_dict.gitdir ~= nil
+        and vim.b[bufnr0].jjsigns_status_dict.gitdir ~= nil
     end, bufnr == nil and vim.NIL or bufnr)
   end)
 
@@ -766,7 +766,7 @@ end
 --- @return string[]
 function M.debug_messages()
   --- @type string[]
-  local r = exec_lua("return require'gitsigns.debug.log'.get(true)")
+  local r = exec_lua("return require'jjsigns.debug.log'.get(true)")
   for i, line in ipairs(r) do
     -- Remove leading timestamp
     r[i] = line:gsub('^[0-9.]+ D ', '')
@@ -815,12 +815,12 @@ function M.enable_lua_treesitter_on_filetype(group_name)
 
     vim.cmd('syntax on')
     vim.bo.filetype = 'lua'
-  end, group_name or 'gitsigns_test_lua_treesitter')
+  end, group_name or 'jjsigns_test_lua_treesitter')
 end
 
 --- @param config? table
 --- @param on_attach? boolean
-function M.setup_gitsigns(config, on_attach)
+function M.setup_jjsigns(config, on_attach)
   M.setup_path()
   exec_lua(function(config0, on_attach0)
     if config0 and config0.on_attach then
@@ -836,7 +836,7 @@ function M.setup_gitsigns(config, on_attach)
         return false
       end
     end
-    require('gitsigns').setup(config0)
+    require('jjsigns').setup(config0)
     vim.o.diffopt = 'internal,filler,closeoff'
   end, config, on_attach)
 end
@@ -845,26 +845,26 @@ end
 --- @param bufnr integer
 local function check_status(status, bufnr)
   if next(status) == nil then
-    eq(false, pcall(buf_get_var, bufnr, 'gitsigns_head'), 'b:gitsigns_head is unexpectedly set')
+    eq(false, pcall(buf_get_var, bufnr, 'jjsigns_head'), 'b:jjsigns_head is unexpectedly set')
     eq(
       false,
-      pcall(buf_get_var, bufnr, 'gitsigns_status_dict'),
-      'b:gitsigns_status_dict is unexpectedly set'
+      pcall(buf_get_var, bufnr, 'jjsigns_status_dict'),
+      'b:jjsigns_status_dict is unexpectedly set'
     )
     return
   end
 
-  eq(status.head, buf_get_var(bufnr, 'gitsigns_head'), 'b:gitsigns_head does not match')
+  eq(status.head, buf_get_var(bufnr, 'jjsigns_head'), 'b:jjsigns_head does not match')
 
   --- @type table<string,string|integer>
-  local bstatus = buf_get_var(bufnr, 'gitsigns_status_dict')
+  local bstatus = buf_get_var(bufnr, 'jjsigns_status_dict')
 
   for _, i in ipairs({ 'added', 'changed', 'removed', 'head' }) do
-    eq(status[i], bstatus[i], string.format("status['%s'] did not match gitsigns_status_dict", i))
+    eq(status[i], bstatus[i], string.format("status['%s'] did not match jjsigns_status_dict", i))
   end
   -- Catch any extra keys
   for i, v in pairs(status) do
-    eq(v, bstatus[i], string.format("status['%s'] did not match gitsigns_status_dict", i))
+    eq(v, bstatus[i], string.format("status['%s'] did not match jjsigns_status_dict", i))
   end
 end
 
@@ -882,12 +882,12 @@ local function check_signs(signs, bufnr)
 
   for _, name in ipairs(buf_signs) do
     for t, hl in pairs({
-      added = 'GitSignsAdd',
-      changed = 'GitSignsChange',
-      delete = 'GitSignsDelete',
-      changedelete = 'GitSignsChangedelete',
-      topdelete = 'GitSignsTopdelete',
-      untracked = 'GitSignsUntracked',
+      added = 'JjSignsAdd',
+      changed = 'JjSignsChange',
+      delete = 'JjSignsDelete',
+      changedelete = 'JjSignsChangedelete',
+      topdelete = 'JjSignsTopdelete',
+      untracked = 'JjSignsUntracked',
     }) do
       if name == hl then
         act[t] = (act[t] or 0) + 1

@@ -8,7 +8,7 @@ helpers.env()
 --- @param hunks [string,integer,integer,integer,integer][]
 --- @return [string,integer,integer?][]
 local function calc_signs(hunks)
-  local hunks1 = {} --- @type Gitsigns.Hunk.Hunk[]
+  local hunks1 = {} --- @type Jjsigns.Hunk.Hunk[]
   for i, hunk in ipairs(hunks) do
     hunks1[i] = {
       added = { count = hunk[4], start = hunk[5] },
@@ -18,10 +18,10 @@ local function calc_signs(hunks)
   end
 
   local signs = exec_lua(
-    --- @param hunks0 Gitsigns.Hunk.Hunk[]
+    --- @param hunks0 Jjsigns.Hunk.Hunk[]
     function(hunks0)
-      local Hunks = require('gitsigns.hunks')
-      local signs0 = {} --- @type Gitsigns.Sign[]
+      local Hunks = require('jjsigns.hunks')
+      local signs0 = {} --- @type Jjsigns.Sign[]
       for i, hunk in ipairs(hunks0) do
         local prev_hunk, next_hunk = hunks0[i - 1], hunks0[i + 1]
         vim.list_extend(signs0, Hunks.calc_signs(prev_hunk, hunk, next_hunk))
@@ -42,7 +42,7 @@ describe('hunksigns', function()
   before_each(function()
     exec_lua(function(path)
       package.path = path
-      require('gitsigns').setup({
+      require('jjsigns').setup({
         _new_sign_calc = true,
         _threaded_diff = false,
       })
@@ -117,7 +117,7 @@ describe('hunksigns', function()
 
   it('does not mark no_nl_at_eof for non-eof hunks', function()
     local hunk = exec_lua(function()
-      local diff = require('gitsigns.diff_int')
+      local diff = require('jjsigns.diff_int')
       local hunks = diff.run_diff({ 'a1', 'a2', 'a3' }, { 'x1', 'x2', 'a3' }, false)
       return hunks[1]
     end)

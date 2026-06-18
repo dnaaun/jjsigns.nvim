@@ -1,2 +1,2 @@
 doc/* linguist-documentation linguist-generated=true
-lua/gitsigns/cli/completion/generated.lua linguist-generated=true
+lua/jjsigns/cli/completion/generated.lua linguist-generated=true

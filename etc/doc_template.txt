@@ -1,29 +1,29 @@
-*gitsigns.txt* Gitsigns
-*gitsigns.nvim*
+*jjsigns.txt* Jjsigns
+*jjsigns.nvim*
 
 Author:   Lewis Russell <lewis6991@gmail.com>
 Version:  {{VERSION}}
-Homepage: <https://github.com/lewis6991/gitsigns.nvim>
+Homepage: <https://github.com/dnaaun/jjsigns.nvim>
 License:  MIT license
 
 ==============================================================================
-INTRODUCTION                                                        *gitsigns*
+INTRODUCTION                                                        *jjsigns*
 
-Gitsigns is a plugin for Neovim that provides integration with Git via a
+Jjsigns is a plugin for Neovim that provides integration with Git via a
 feature set which includes (but not limited to):
   • Provides signs in the |signcolumn| to show changed/added/removed lines.
   • Mappings to operate on hunks to stage, undo or reset against Git's index.
 
-Gitsigns is implemented entirely in Lua which is built into Neovim and
+Jjsigns is implemented entirely in Lua which is built into Neovim and
 requires no external dependencies other than git. This is unlike other plugins
 that require python, node, etc, which need to communicate with Neovim using
-|RPC|.  By default, Gitsigns also uses Neovim's built-in diff library
+|RPC|.  By default, Jjsigns also uses Neovim's built-in diff library
 (`vim.diff`) unlike other similar plugins that need to run `git-diff` as an
 external process which is less efficient, has tighter bottlenecks and requires
 file IO.
 
 ==============================================================================
-USAGE                                                         *gitsigns-usage*
+USAGE                                                         *jjsigns-usage*
 
 No setup required.
 >lua
@@ -34,15 +34,15 @@ with most of the default settings:
 <
 
 ==============================================================================
-MAPPINGS                                                   *gitsigns-mappings*
+MAPPINGS                                                   *jjsigns-mappings*
 
 Custom mappings can be defined in the `on_attach` callback in the config table
-passed to |gitsigns-setup()|. See |gitsigns-config-on_attach|.
+passed to |jjsigns-setup()|. See |jjsigns-config-on_attach|.
 
 Most actions can be repeated with `.` if you have |vim-repeat| installed.
 
 ==============================================================================
-FUNCTIONS                                                 *gitsigns-functions*
+FUNCTIONS                                                 *jjsigns-functions*
 
 Note functions with the {async} attribute are run asynchronously and accept
 an optional {callback} argument.
@@ -51,15 +51,15 @@ an optional {callback} argument.
 {{FUNCTIONS}}
 
 ==============================================================================
-TYPES                                                       *gitsigns-types*
+TYPES                                                       *jjsigns-types*
 
 {{TYPES}}
 
 ==============================================================================
-CONFIGURATION                                                *gitsigns-config*
+CONFIGURATION                                                *jjsigns-config*
 
 This section describes the configuration fields which can be passed to
-|gitsigns.setup()|. Note fields of type `table` may be marked with extended
+|jjsigns.setup()|. Note fields of type `table` may be marked with extended
 meaning the field is merged with the default, with the user value given higher
 precedence. This allows only specific sub-fields to be configured without
 having to redefine the whole field.
@@ -67,9 +67,9 @@ having to redefine the whole field.
 {{CONFIG}}
 
 ==============================================================================
-HIGHLIGHT GROUPS                                   *gitsigns-highlight-groups*
+HIGHLIGHT GROUPS                                   *jjsigns-highlight-groups*
 
-These are the highlights groups used by Gitsigns.
+These are the highlights groups used by Jjsigns.
 
 Note if a highlight is not defined, it will be automatically derived by
 searching for other defined highlights in order.
@@ -77,37 +77,37 @@ searching for other defined highlights in order.
 {{HIGHLIGHTS}}
 
 ==============================================================================
-COMMAND                                                      *gitsigns-command*
+COMMAND                                                      *jjsigns-command*
 
-                                                                    *:Gitsigns*
-:Gitsigns {subcmd} {args}  Run a Gitsigns command. {subcmd} can be any
-                           function documented in |gitsigns-functions|.
+                                                                    *:Jjsigns*
+:Jjsigns {subcmd} {args}  Run a Jjsigns command. {subcmd} can be any
+                           function documented in |jjsigns-functions|.
                            Each argument in {args} will be attempted to be
                            parsed as a Lua value using `loadstring`, however
                            if this fails the argument will remain as the
                            string given by |<f-args>|.
 
                            Note this command is equivalent to: >vim
-                             :lua require('gitsigns').{subcmd}({args})
+                             :lua require('jjsigns').{subcmd}({args})
 <
                            Examples: >vim
-                             :Gitsigns diffthis HEAD~1
-                             :Gitsigns blame_line
-                             :Gitsigns toggle_signs
-                             :Gitsigns toggle_current_line_blame
-                             :Gitsigns change_base ~
-                             :Gitsigns reset_buffer
-                             :Gitsigns change_base nil true
+                             :Jjsigns diffthis HEAD~1
+                             :Jjsigns blame_line
+                             :Jjsigns toggle_signs
+                             :Jjsigns toggle_current_line_blame
+                             :Jjsigns change_base ~
+                             :Jjsigns reset_buffer
+                             :Jjsigns change_base nil true
 <
 
 ==============================================================================
-SPECIFYING OBJECTS                          *gitsigns-object* *gitsigns-revision*
+SPECIFYING OBJECTS                          *jjsigns-object* *jjsigns-revision*
 
-Gitsigns objects are Git revisions as defined in the "SPECIFYING REVISIONS"
+Jjsigns objects are Git revisions as defined in the "SPECIFYING REVISIONS"
 section in the gitrevisions(7) man page. For commands that accept an optional
 base, the default is the file in the index. Examples:
 
-Additionally, Gitsigns also accepts the value `FILE` to specify the working
+Additionally, Jjsigns also accepts the value `FILE` to specify the working
 version of a file.
 
 Object        Meaning ~
@@ -124,12 +124,12 @@ main...other  Version of file in the merge base of main and other
 :2            The alternate file in the target branch during a conflict
 
 ==============================================================================
-STATUSLINE                                               *gitsigns-statusline*
+STATUSLINE                                               *jjsigns-statusline*
 
-                                    *b:gitsigns_status* *b:gitsigns_status_dict*
-The buffer variables `b:gitsigns_status` and `b:gitsigns_status_dict` are
-provided. `b:gitsigns_status` is formatted using `config.status_formatter`
-. `b:gitsigns_status_dict` is a dictionary with the keys:
+                                    *b:jjsigns_status* *b:jjsigns_status_dict*
+The buffer variables `b:jjsigns_status` and `b:jjsigns_status_dict` are
+provided. `b:jjsigns_status` is formatted using `config.status_formatter`
+. `b:jjsigns_status_dict` is a dictionary with the keys:
 
         • `added` - Number of added lines.
         • `changed` - Number of changed lines.
@@ -140,49 +140,49 @@ provided. `b:gitsigns_status` is formatted using `config.status_formatter`
 
 Example:
 >vim
-    set statusline+=%{get(b:,'gitsigns_status','')}
+    set statusline+=%{get(b:,'jjsigns_status','')}
 <
-                                            *b:gitsigns_head* *g:gitsigns_head*
-Use `g:gitsigns_head` and `b:gitsigns_head` to return the name of the current
+                                            *b:jjsigns_head* *g:jjsigns_head*
+Use `g:jjsigns_head` and `b:jjsigns_head` to return the name of the current
 HEAD (usually branch name). If the current HEAD is detached then this will be
-a short commit hash. `g:gitsigns_head` returns the current HEAD for the
-current working directory, whereas `b:gitsigns_head` returns the current HEAD
+a short commit hash. `g:jjsigns_head` returns the current HEAD for the
+current working directory, whereas `b:jjsigns_head` returns the current HEAD
 for each buffer.
 
-                            *b:gitsigns_blame_line* *b:gitsigns_blame_line_dict*
-Provided if |gitsigns-config-current_line_blame| is enabled.
-`b:gitsigns_blame_line` if formatted using
-`config.current_line_blame_formatter`. `b:gitsigns_blame_line_dict` is a
+                            *b:jjsigns_blame_line* *b:jjsigns_blame_line_dict*
+Provided if |jjsigns-config-current_line_blame| is enabled.
+`b:jjsigns_blame_line` if formatted using
+`config.current_line_blame_formatter`. `b:jjsigns_blame_line_dict` is a
 dictionary containing of the blame object for the current line. For complete
 list of keys, see the {blame_info} argument from
-|gitsigns-config-current_line_blame_formatter|.
+|jjsigns-config-current_line_blame_formatter|.
 
 ==============================================================================
-TEXT OBJECTS                                             *gitsigns-textobject*
+TEXT OBJECTS                                             *jjsigns-textobject*
 
 Since text objects are defined via keymaps, these are exposed and configurable
-via the config, see |gitsigns-config-keymaps|. The lua implementation is
-exposed through |gitsigns.select_hunk()|.
+via the config, see |jjsigns-config-keymaps|. The lua implementation is
+exposed through |jjsigns.select_hunk()|.
 
 ==============================================================================
-EVENTS                                                       *gitsigns-events*
+EVENTS                                                       *jjsigns-events*
 
 |User| |autocommands| provided to allow extending behaviors.
 
 Example: >lua
     vim.api.nvim_create_autocmd('User', {
-      pattern = 'GitSignsUpdate',
+      pattern = 'JjSignsUpdate',
       callback = function(args)
-        print(os.time(), ' Gitsigns made an update on ', args.data.buffer)
+        print(os.time(), ' Jjsigns made an update on ', args.data.buffer)
       end
     })
 <
-                                                       *User_GitSignsUpdate*
-GitSignsUpdate     After Gitsigns updates its knowledge about hunks.
+                                                       *User_JjSignsUpdate*
+JjSignsUpdate     After Jjsigns updates its knowledge about hunks.
                    Provides `bufnr` in the autocmd user data.
 
-                                                      *User_GitSignsChanged*
-GitSignsChanged    After any event in which Gitsigns can potentially change
+                                                      *User_JjSignsChanged*
+JjSignsChanged    After any event in which Jjsigns can potentially change
                    the repository. Provides `file` in the autocmd user data.
 
 ------------------------------------------------------------------------------

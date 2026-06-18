@@ -6,7 +6,7 @@ local command = helpers.api.nvim_command
 local eq = helpers.eq
 local exec_lua = helpers.exec_lua
 local git = helpers.git
-local setup_gitsigns = helpers.setup_gitsigns
+local setup_jjsigns = helpers.setup_jjsigns
 local setup_test_repo = helpers.setup_test_repo
 local test_config = helpers.test_config
 local eq_path = helpers.eq_path
@@ -34,7 +34,7 @@ describe('qflist', function()
   it('diffs renamed files against their base path when using a base revision', function()
     setup_test_repo()
     command('cd ' .. scratch)
-    setup_gitsigns(vim.tbl_extend('force', test_config, { base = 'HEAD' }))
+    setup_jjsigns(vim.tbl_extend('force', test_config, { base = 'HEAD' }))
 
     local renamed = test_file .. '2'
     git('mv', test_file, renamed)
@@ -45,7 +45,7 @@ describe('qflist', function()
     end, renamed)
 
     exec_lua(function()
-      require('gitsigns.actions').setqflist('all', { open = false })
+      require('jjsigns.actions').setqflist('all', { open = false })
     end)
 
     helpers.expectf(function()
@@ -69,12 +69,12 @@ describe('qflist', function()
   it('includes deleted tracked files in setqflist all', function()
     setup_test_repo()
     command('cd ' .. scratch)
-    setup_gitsigns(test_config)
+    setup_jjsigns(test_config)
 
     git('rm', test_file)
 
     exec_lua(function()
-      require('gitsigns.actions').setqflist('all', { open = false })
+      require('jjsigns.actions').setqflist('all', { open = false })
     end)
 
     helpers.expectf(function()

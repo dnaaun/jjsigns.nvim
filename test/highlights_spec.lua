@@ -9,14 +9,14 @@ local test_config = helpers.test_config
 local expectf = helpers.expectf
 local match_dag = helpers.match_dag
 local p = helpers.p
-local setup_gitsigns = helpers.setup_gitsigns
+local setup_jjsigns = helpers.setup_jjsigns
 local eq = helpers.eq
 
 helpers.env()
 
 describe('highlights', function()
   local screen --- @type test.screen
-  local config --- @type Gitsigns.Config
+  local config --- @type Jjsigns.Config
 
   before_each(function()
     clear()
@@ -61,19 +61,19 @@ describe('highlights', function()
     config.linehl = true
     config._test_mode = true
 
-    setup_gitsigns(config)
+    setup_jjsigns(config)
 
     local nvim10 = helpers.fn.has('nvim-0.10') > 0
 
     expectf(function()
       match_dag({
-        p('Deriving GitSignsAdd from ' .. (nvim10 and 'Added' or 'DiffAdd')),
-        p('Deriving GitSignsAddLn from DiffAdd'),
-        p('Deriving GitSignsAddNr from GitSignsAdd'),
-        p('Deriving GitSignsChangeLn from DiffChange'),
-        p('Deriving GitSignsChangeNr from GitSignsChange'),
-        p('Deriving GitSignsDelete from ' .. (nvim10 and 'Removed' or 'DiffDelete')),
-        p('Deriving GitSignsDeleteNr from GitSignsDelete'),
+        p('Deriving JjSignsAdd from ' .. (nvim10 and 'Added' or 'DiffAdd')),
+        p('Deriving JjSignsAddLn from DiffAdd'),
+        p('Deriving JjSignsAddNr from JjSignsAdd'),
+        p('Deriving JjSignsChangeLn from DiffChange'),
+        p('Deriving JjSignsChangeNr from JjSignsChange'),
+        p('Deriving JjSignsDelete from ' .. (nvim10 and 'Removed' or 'DiffDelete')),
+        p('Deriving JjSignsDeleteNr from JjSignsDelete'),
       })
     end)
   end)
@@ -81,7 +81,7 @@ describe('highlights', function()
   it('update when colorscheme changes', function()
     command('set termguicolors')
     config.linehl = true
-    setup_gitsigns(config)
+    setup_jjsigns(config)
   end)
 
   it('get_temp_hl handles equal min/max', function()
@@ -89,15 +89,15 @@ describe('highlights', function()
     local res = helpers.exec_lua(function()
       vim.api.nvim_set_hl(0, 'Normal', { bg = 0x000000 })
 
-      package.loaded['gitsigns.highlight'] = nil
-      local hl = require('gitsigns.highlight')
+      package.loaded['jjsigns.highlight'] = nil
+      local hl = require('jjsigns.highlight')
 
       local name = hl.get_temp_hl(0, 0, 0, 0.5, true)
       local info = vim.api.nvim_get_hl(0, { name = name, link = false })
       return { name = name, fg = info.fg }
     end)
 
-    assert(res.name:match('^GitSignsColorTemp%.fg%.%d+$') ~= nil)
+    assert(res.name:match('^JjSignsColorTemp%.fg%.%d+$') ~= nil)
     eq(0x00007F, res.fg)
   end)
 end)
