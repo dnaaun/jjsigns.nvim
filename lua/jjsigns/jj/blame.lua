@@ -7,13 +7,52 @@ local error_once = require('jjsigns.message').error_once
 --- blame UI is agnostic to the backend.
 local M = {}
 
+local change_id_cache = {} --- @type table<string,string>
+
+--- @async
+--- @param repo Jjsigns.Repo
+--- @param info Jjsigns.CommitInfo|Jjsigns.BlameInfoPublic
+--- @return Jjsigns.CommitInfo|Jjsigns.BlameInfoPublic
+function M.use_display_change_id(repo, info)
+  if repo.vcs ~= 'jj' or not info.sha or info.sha:match('^0+$') then
+    return info
+  end
+
+  local change_id = info.change_id
+  if not change_id then
+    local commit_sha = info.commit_sha or info.sha
+    local key = repo.toplevel .. '\0' .. commit_sha
+    change_id = change_id_cache[key]
+    if not change_id then
+      change_id = jj.change_id(repo.toplevel, commit_sha)
+      if change_id then
+        change_id_cache[key] = change_id
+      end
+    end
+  end
+
+  if not change_id then
+    return info
+  end
+
+  info = vim.deepcopy(info)
+  info.commit_sha = info.commit_sha or info.sha
+  info.change_id = change_id
+  info.abbrev_change_id = info.abbrev_change_id or change_id
+  info.abbrev_sha = change_id
+  return info
+end
+
 --- @param line Jjsigns.JJ.AnnotateLine
 --- @return Jjsigns.CommitInfo
 local function commit_info(line)
   local mail = '<' .. line.email .. '>'
   return {
     sha = line.commit_id,
-    abbrev_sha = line.commit_id:sub(1, 8),
+    commit_sha = line.commit_id,
+    change_id = line.change_id,
+    abbrev_change_id = line.change_id,
+    abbrev_sha = line.change_id,
     author = line.author,
     author_mail = mail,
     author_time = line.time,

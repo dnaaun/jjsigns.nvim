@@ -6,6 +6,7 @@ local command = helpers.api.nvim_command
 local command_wait_jjsigns_update = helpers.command_wait_jjsigns_update
 local edit = helpers.edit
 local eq = helpers.eq
+local expectf = helpers.expectf
 local exec_lua = helpers.exec_lua
 local feed = helpers.feed
 local matches = helpers.matches
@@ -91,6 +92,42 @@ describe('jj', function()
     -- so this pattern can only match a jj change id.
     matches('^[k-z]+$', head)
     eq(true, #head >= 8)
+  end)
+
+  it('shows jj change ids in colocated current-line blame', function()
+    if skip_without_jj() then
+      return
+    end
+
+    config.current_line_blame = true
+    config.current_line_blame_formatter = '<abbrev_sha>'
+    config.current_line_blame_opts = { delay = 1 }
+
+    setup_jjsigns(config)
+    setup_jj_repo()
+    edit(test_file)
+    wait_for_attach()
+
+    exec_lua(function()
+      require('jjsigns.current_line_blame').refresh()
+    end)
+
+    expectf(function()
+      local line = exec_lua('return vim.b.jjsigns_blame_line')
+      local blame_line = exec_lua('return vim.b.jjsigns_blame_line_dict')
+      return type(line) == 'string'
+        and line:match('^[k-z]+$')
+        and #line >= 8
+        and type(blame_line) == 'table'
+        and blame_line.abbrev_sha == line
+    end)
+
+    local blame_line = exec_lua('return vim.b.jjsigns_blame_line_dict')
+    matches('^[k-z]+$', blame_line.abbrev_sha)
+    eq(blame_line.abbrev_sha, blame_line.change_id)
+    eq(blame_line.abbrev_sha, blame_line.abbrev_change_id)
+    eq(blame_line.sha, blame_line.commit_sha)
+    eq(false, blame_line.sha == blame_line.abbrev_sha)
   end)
 
   it('disables staging (no index/staging area in jj)', function()
@@ -268,19 +305,33 @@ describe('jj (non-colocated, no git)', function()
     edit(test_file)
     wait_for_attach()
 
-    local author = exec_lua(function()
+    local result = exec_lua(function()
       local async = require('jjsigns.async')
       local cache = require('jjsigns.cache').cache
       local bcache = cache[vim.api.nvim_get_current_buf()]
       return async
         .run(function()
           local info = bcache:get_blame(1, {})
-          return info and info.commit and info.commit.author
+          return info
+              and info.commit
+              and {
+                author = info.commit.author,
+                sha = info.commit.sha,
+                change_id = info.commit.change_id,
+                abbrev_change_id = info.commit.abbrev_change_id,
+                abbrev_sha = info.commit.abbrev_sha,
+              }
+            or nil
         end)
         :wait(5000)
     end)
 
-    eq('tester', author)
+    eq('tester', result.author)
+    eq(false, result.sha == result.abbrev_sha)
+    eq(result.abbrev_sha, result.change_id)
+    eq(result.abbrev_sha, result.abbrev_change_id)
+    matches('^[k-z]+$', result.abbrev_sha)
+    eq(true, #result.abbrev_sha >= 8)
   end)
 
   it('reports the jj change id as the head', function()

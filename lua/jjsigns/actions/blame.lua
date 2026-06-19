@@ -2,6 +2,7 @@ local async = require('jjsigns.async')
 local BlameFormatter = require('jjsigns.blame_formatter')
 local cache = require('jjsigns.cache').cache
 local config = require('jjsigns.config').config
+local JjBlame = require('jjsigns.jj.blame')
 local log = require('jjsigns.debug.log')
 local error_once = require('jjsigns.message').error_once
 local util = require('jjsigns.util')
@@ -47,7 +48,8 @@ end
 --- @param sha string
 --- @return string
 local function get_hash_color(sha)
-  local r, g, b = sha:match('(%x)%x(%x)%x(%x)')
+  local color_source = sha:match('^%x+$') and sha or vim.fn.sha256(sha)
+  local r, g, b = color_source:match('(%x)%x(%x)%x(%x)')
   assert(r and g and b, 'Invalid hash color')
   local color = mod(r) * 0x10000 + mod(g) * 0x100 + mod(b)
 
@@ -187,6 +189,7 @@ local function render(blame, win, main_win, buf_sha)
   local main_buf = api.nvim_win_get_buf(main_win)
   local main_cache = assert(cache[main_buf])
   local username = main_cache.git_obj.repo.username or ''
+  local repo = main_cache.git_obj.repo
 
   local lines = {} --- @type string[]
   local highlights = {} --- @type table<integer, Jjsigns.BlameLineHighlight[]>
@@ -199,8 +202,11 @@ local function render(blame, win, main_win, buf_sha)
 
   for i, b in ipairs(entries) do
     local commit = b.commit
-    local sha = commit.abbrev_sha
-    local next_sha = entries[i + 1] and entries[i + 1].commit.abbrev_sha or nil
+    local display_commit = JjBlame.use_display_change_id(repo, commit)
+    local sha = display_commit.abbrev_sha
+    local next_sha = entries[i + 1]
+        and JjBlame.use_display_change_id(repo, entries[i + 1].commit).abbrev_sha
+      or nil
     local hash_hl = get_hash_color(sha)
     local line_chunks --- @type Jjsigns.BlameFmtChunk[]
     local summary_line = false
@@ -222,7 +228,7 @@ local function render(blame, win, main_win, buf_sha)
       cnt = 0
       commit_lines[i] = true
       local graph = sha == next_sha and chars.first or chars.single
-      local info = util.convert_blame_info(b)
+      local info = util.convert_blame_info(vim.tbl_extend('force', b, { commit = display_commit }))
       local formatted = format_side_panel(username, hash_hl, info, max_author_len)
       show_summary = formatted.summary
       commit_summaries[i] = show_summary
@@ -381,9 +387,10 @@ end
 local function on_cursor_moved(bufnr, blm_win, blame, commit_lines, commit_summaries)
   local blm_bufnr = api.nvim_get_current_buf()
   local lnum = api.nvim_win_get_cursor(blm_win)[1]
-  local cur_sha = assert(blame[lnum]).commit.abbrev_sha
+  local repo = assert(cache[bufnr]).git_obj.repo
+  local cur_sha = JjBlame.use_display_change_id(repo, assert(blame[lnum]).commit).abbrev_sha
   for i, info in pairs(blame) do
-    if info.commit.abbrev_sha == cur_sha then
+    if JjBlame.use_display_change_id(repo, info.commit).abbrev_sha == cur_sha then
       hl_line(blm_bufnr, ns_hl, i, 'CursorLine')
       hl_line(blm_bufnr, ns_hl, i, '@markup.strong')
       hl_line(bufnr, ns_hl, i, 'CursorLine')
@@ -392,7 +399,8 @@ local function on_cursor_moved(bufnr, blm_win, blame, commit_lines, commit_summa
 
   if commit_lines[lnum] and commit_lines[lnum + 1] and commit_summaries[lnum] ~= false then
     local blame_info = assert(blame[lnum])
-    local hash_hl = get_hash_color(blame_info.commit.abbrev_sha)
+    local display_commit = JjBlame.use_display_change_id(repo, blame_info.commit)
+    local hash_hl = get_hash_color(display_commit.abbrev_sha)
     api.nvim_buf_set_extmark(blm_bufnr, ns_hl, lnum - 1, 0, {
       virt_text = { { chars.first, hash_hl } },
       virt_text_pos = 'overlay',

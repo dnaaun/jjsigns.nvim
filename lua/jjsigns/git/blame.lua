@@ -16,6 +16,9 @@ local util = require('jjsigns.util')
 --- @field summary string
 --- @field sha string
 --- @field abbrev_sha string
+--- @field commit_sha? string
+--- @field change_id? string
+--- @field abbrev_change_id? string
 --- @field boundary? true
 
 --- @class Jjsigns.BlameInfoPublic: Jjsigns.BlameInfo, Jjsigns.CommitInfo

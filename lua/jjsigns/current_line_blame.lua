@@ -22,6 +22,7 @@ local function reset(bufnr)
   end
   api.nvim_buf_del_extmark(bufnr, namespace, 1)
   vim.b[bufnr].jjsigns_blame_line_dict = nil
+  vim.b[bufnr].jjsigns_blame_line = nil
 end
 
 --- @param virt_text Jjsigns.BlameFmtChunk[]
@@ -119,6 +120,7 @@ end
 local function handle_blame_info(bcache, lnum, blame_info, opts)
   local bufnr = bcache.bufnr
   blame_info = util.convert_blame_info(blame_info)
+  blame_info = require('jjsigns.jj.blame').use_display_change_id(bcache.git_obj.repo, blame_info)
 
   local virt_text = get_blame_virt_text(bcache, blame_info)
   local virt_text_str = flatten_virt_text(virt_text)

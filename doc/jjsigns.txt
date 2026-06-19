@@ -992,6 +992,9 @@ current_line_blame_formatter    *jjsigns-config-current_line_blame_formatter*
     When a string, accepts the following format specifiers:
 
         • `<abbrev_sha>`
+        • `<change_id>`
+        • `<abbrev_change_id>`
+        • `<commit_sha>`
         • `<orig_lnum>`
         • `<final_lnum>`
         • `<author>`
@@ -1005,6 +1008,9 @@ current_line_blame_formatter    *jjsigns-config-current_line_blame_formatter*
         • `<summary>`
         • `<previous>`
         • `<filename>`
+
+      In jj repositories, `<abbrev_sha>` is the displayed jj change id.
+      `<commit_sha>` keeps the underlying commit id when available.
 
       For `<author_time:FORMAT>` and `<committer_time:FORMAT>`, `FORMAT` can
       be any valid date format that is accepted by `os.date()` with the
@@ -1035,6 +1041,9 @@ current_line_blame_formatter    *jjsigns-config-current_line_blame_formatter*
         {name}       Git user name returned from `git config user.name` .
         {blame_info} Table with the following keys:
                        • `abbrev_sha`: string
+                       • `change_id`: string?
+                       • `abbrev_change_id`: string?
+                       • `commit_sha`: string?
                        • `orig_lnum`: integer
                        • `final_lnum`: integer
                        • `author`: string

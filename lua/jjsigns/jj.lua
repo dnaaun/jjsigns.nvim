@@ -156,6 +156,23 @@ function M.commit_id(root, revset)
 end
 
 --- @async
+--- Resolve a revset or commit id to a short jj change id.
+--- @param root string
+--- @param revset string
+--- @return string? change_id
+function M.change_id(root, revset)
+  local out, _, code = M.command(
+    root,
+    { 'log', '--no-graph', '--revisions', revset, '--template', 'change_id.shortest(8)' }
+  )
+  if code ~= 0 then
+    return
+  end
+  local id = out[1]
+  return id ~= nil and id ~= '' and id or nil
+end
+
+--- @async
 --- @param root string
 --- @return string? name
 function M.username(root)
@@ -260,6 +277,7 @@ local SEP = '\x1f'
 
 local ANNOTATE_TEMPLATE = table.concat({
   'commit.commit_id()',
+  'commit.change_id().shortest(8)',
   'if(commit.current_working_copy(), "1", "0")',
   'commit.author().name()',
   'commit.author().email()',
@@ -270,6 +288,7 @@ local ANNOTATE_TEMPLATE = table.concat({
 
 --- @class Jjsigns.JJ.AnnotateLine
 --- @field commit_id string
+--- @field change_id string
 --- @field working_copy boolean
 --- @field author string
 --- @field email string
@@ -304,16 +323,17 @@ function M.annotate(root, revset, relpath)
   local lines = {} --- @type Jjsigns.JJ.AnnotateLine[]
   for _, line in ipairs(out) do
     local parts = vim.split(line, SEP, { plain = true })
-    if #parts >= 7 then
+    if #parts >= 8 then
       --- @type Jjsigns.JJ.AnnotateLine
       local entry = {
         commit_id = parts[1],
-        working_copy = parts[2] == '1',
-        author = parts[3],
-        email = parts[4],
-        time = math.floor(tonumber(parts[5]) or 0),
-        tz = parts[6],
-        summary = parts[7],
+        change_id = parts[2],
+        working_copy = parts[3] == '1',
+        author = parts[4],
+        email = parts[5],
+        time = math.floor(tonumber(parts[6]) or 0),
+        tz = parts[7],
+        summary = parts[8],
       }
       lines[#lines + 1] = entry
     else

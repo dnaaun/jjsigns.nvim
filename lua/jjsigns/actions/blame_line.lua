@@ -206,7 +206,9 @@ return function(opts)
     return
   end
 
-  local result = util.convert_blame_info(assert(info))
+  local repo = bcache.git_obj.repo
+  local result =
+    require('jjsigns.jj.blame').use_display_change_id(repo, util.convert_blame_info(assert(info)))
   if not is_committed(result) then
     if is_stale() then
       return
@@ -215,7 +217,6 @@ return function(opts)
     return
   end
 
-  local repo = bcache.git_obj.repo
   local body = opts.full and build_full_blame_body(bufnr, result, repo)
     or { { { result.summary, 'NormalFloat' } } }
   local blame_linespec = { create_blame_title_linespec(result, repo, false) }
