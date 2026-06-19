@@ -772,6 +772,61 @@ local function update_buf_base(bcache, base)
   update(bcache.bufnr)
 end
 
+local function change_base0(base, global)
+  base = util.norm_base(base)
+
+  if global then
+    config.base = base
+
+    for _, bcache in pairs(cache) do
+      update_buf_base(bcache, base)
+    end
+  else
+    local bufnr = current_buf()
+    local bcache = cache[bufnr]
+    if not bcache then
+      return
+    end
+
+    update_buf_base(bcache, base)
+  end
+end
+
+local function normalize_jj_revisions(revisions)
+  revisions = revisions and vim.trim(tostring(revisions)) or ''
+  if revisions == '' then
+    return '@'
+  end
+  return revisions
+end
+
+local function jj_revisions_base_revset(revisions)
+  return ('roots((%s))-'):format(normalize_jj_revisions(revisions))
+end
+
+local function jj_diff_base_revset(opt)
+  opt = opt or {}
+  if opt.revisions and opt.revisions ~= '' then
+    return jj_revisions_base_revset(opt.revisions)
+  end
+  if opt.from and opt.from ~= '' then
+    return opt.from
+  end
+  if opt.to and opt.to ~= '' then
+    return '@'
+  end
+  return jj_revisions_base_revset('@')
+end
+
+local function resolve_jj_diff_base(root, opt)
+  local base = jj_diff_base_revset(opt)
+  if not root then
+    return base
+  end
+
+  return require('jjsigns.jj').commit_id(root, base) or base
+end
+
 --- Change the base revision to diff against. If {base} is not
 --- given, then the original base is used. If {global} is given
 --- and true, then change the base revision of all buffers,
@@ -814,28 +869,81 @@ end
 --- @param callback? fun(err?: string)
 function M.change_base(base, global, callback)
   async_run(callback, function()
-    base = util.norm_base(base)
-
-    if global then
-      config.base = base
-
-      for _, bcache in pairs(cache) do
-        update_buf_base(bcache, base)
-      end
-    else
-      local bufnr = current_buf()
-      local bcache = cache[bufnr]
-      if not bcache then
-        return
-      end
-
-      update_buf_base(bcache, base)
-    end
+    change_base0(base, global)
   end)
 end
 
 C.change_base = function(args, _)
   M.change_base(args[1], (args[2] or args.global))
+end
+
+--- Change the base to the parent side of a jj revision set.
+---
+--- The {revisions} argument has jj's `jj diff --revisions` meaning: it names
+--- the change or contiguous set of changes to view. Jjsigns still decorates
+--- live buffers, so this exactly matches that change when the live buffer is at
+--- the selected revision (usually `@`).
+---
+--- @param revisions string? jj revset naming the changes to diff. Defaults to `@`.
+--- @param global boolean? Change the base of all buffers.
+--- @param callback? fun(err?: string)
+function M.change_base_to_jj_revisions(revisions, global, callback)
+  M.change_base_to_jj_diff({ revisions = revisions }, global, callback)
+end
+
+--- Change the base to the left side of a jj diff.
+---
+--- The {opt} table mirrors `jj diff`:
+--- - `revisions` means `jj diff --revisions <revset>`, so the base is the
+---   parent side of that revision set.
+--- - `from` means `jj diff --from <revset>`, so the base is that revset.
+--- - `to` is accepted for API symmetry, but Jjsigns decorates live buffers, so
+---   the right side remains the current buffer contents.
+---
+--- @param opt {revisions?: string, from?: string, to?: string}
+--- @param global boolean? Change the base of all buffers.
+--- @param callback? fun(err?: string)
+function M.change_base_to_jj_diff(opt, global, callback)
+  async_run(callback, function()
+    local base = jj_diff_base_revset(opt)
+
+    if global then
+      local default_root = require('jjsigns.jj').find_root(vim.fn.getcwd())
+      config.base = resolve_jj_diff_base(default_root, opt)
+
+      for _, bcache in pairs(cache) do
+        local repo = bcache.git_obj and bcache.git_obj.repo
+        update_buf_base(bcache, resolve_jj_diff_base(repo and repo.toplevel, opt))
+      end
+    else
+      local bcache = cache[current_buf()]
+      local repo = bcache and bcache.git_obj and bcache.git_obj.repo
+      change_base0(resolve_jj_diff_base(repo and repo.toplevel, opt) or base, false)
+    end
+  end)
+end
+
+C.change_base_to_jj_diff = function(args, _)
+  local positional = vim.deepcopy(args)
+  for k, _ in pairs(args) do
+    if type(k) ~= 'number' then
+      positional[k] = nil
+    end
+  end
+
+  local function named_or_pos(name, short)
+    local value = args[name] or args[short]
+    if value == true then
+      return table.remove(positional, 1)
+    end
+    return value
+  end
+
+  M.change_base_to_jj_diff({
+    revisions = named_or_pos('revisions', 'r') or positional[1],
+    from = named_or_pos('from', 'f'),
+    to = named_or_pos('to', 't'),
+  }, args.global)
 end
 
 --- Reset the base revision to diff against back to the
